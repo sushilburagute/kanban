@@ -9,13 +9,22 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #ededed;
+    --color-seagull-50: #edfbfe;
+    --color-seagull-100: #d2f3fb;
+    --color-seagull-200: #abe6f6;
+    --color-seagull-300: #64cfee;
+    --color-seagull-400: #2fb6e1;
+    --color-seagull-500: #1499c6;
+    --color-seagull-600: #137aa7;
+    --color-seagull-700: #176387;
+    --color-seagull-800: #1b526f;
+    --color-seagull-900: #1b455e;
+    --color-seagull-950: #0c2b40;
   }
 }
 
 body {
-  color: var(--foreground);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
