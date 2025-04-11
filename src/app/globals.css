@@ -4,21 +4,19 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-seagull-50: #edfbfe;
-    --color-seagull-100: #d2f3fb;
-    --color-seagull-200: #abe6f6;
-    --color-seagull-300: #64cfee;
-    --color-seagull-400: #2fb6e1;
-    --color-seagull-500: #1499c6;
-    --color-seagull-600: #137aa7;
-    --color-seagull-700: #176387;
-    --color-seagull-800: #1b526f;
-    --color-seagull-900: #1b455e;
-    --color-seagull-950: #0c2b40;
+    --color-theme-50: #edfbfe;
+    --color-theme-100: #d2f3fb;
+    --color-theme-200: #abe6f6;
+    --color-theme-300: #64cfee;
+    --color-theme-400: #2fb6e1;
+    --color-theme-500: #1499c6;
+    --color-theme-600: #137aa7;
+    --color-theme-700: #176387;
+    --color-theme-800: #1b526f;
+    --color-theme-900: #1b455e;
+    --color-theme-950: #0c2b40;
   }
 }
-
-
 
 @layer base {
   :root {
@@ -47,6 +45,14 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
   .dark {
     --background: 20 14.3% 4.1%;
@@ -73,10 +79,16 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
-
-
 
 @layer base {
   * {
