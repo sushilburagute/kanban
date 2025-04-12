@@ -14,20 +14,23 @@ export const metadata: Metadata = {
   title: "Kanban",
   description: "The world's cleanest kanban board.",
 };
-// Fix hyderation error
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={spaceGrotesk.variable} suppressHydrationWarning>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-        <SidebarProvider>
-          <AppSidebar />
-
-          <body className="antialiased">
+      <body className="antialiased">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <SidebarProvider>
+            <AppSidebar />
             <SidebarTrigger />
             {children}
-          </body>
-        </SidebarProvider>
-      </ThemeProvider>
+          </SidebarProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
