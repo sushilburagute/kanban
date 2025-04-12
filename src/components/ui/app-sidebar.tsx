@@ -24,7 +24,6 @@ import {
   Sun,
   TerminalSquareIcon,
 } from "lucide-react";
-import { ThemeToggleButton } from "../ThemeToggleButton";
 import { JSX } from "react";
 import { useTheme } from "next-themes";
 
