@@ -208,7 +208,7 @@ export default function StatsPage() {
               </div>
             ) : null}
 
-            {(!isReady ? Array.from({ length: 2 }) : snapshots).map((snapshot, index) =>
+            {(isReady ? snapshots : Array.from({ length: 2 })).map((snapshot, index) =>
               !isReady ? (
                 <div
                   key={`placeholder-${index}`}
@@ -223,7 +223,10 @@ export default function StatsPage() {
                   </div>
                 </div>
               ) : (
-                <BoardCard key={snapshot.id} snapshot={snapshot} />
+                <BoardCard
+                  key={(snapshot as BoardSnapshot).id}
+                  snapshot={snapshot as BoardSnapshot}
+                />
               )
             )}
           </div>
