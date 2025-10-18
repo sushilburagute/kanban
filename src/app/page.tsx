@@ -24,8 +24,8 @@ export default function Home() {
             Calm structure for work that never stops moving.
           </h1>
           <p className="max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            A minimal board designed to breathe—not shout. Capture what matters, drag cards when plans
-            change, and let the team scan the week in seconds.
+            A minimal board designed to breathe—not shout. Capture what matters, drag cards when
+            plans change, and let the team scan the week in seconds.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button asChild size="lg" className="w-full gap-2 sm:w-auto">
@@ -46,9 +46,9 @@ export default function Home() {
               Three swimlanes. Infinite flow.
             </h2>
             <div className="mt-6 grid gap-4">
-              <ColumnPreview title="Todo" cards={3} />
-              <ColumnPreview title="In Progress" cards={2} />
-              <ColumnPreview title="Done" cards={2} muted />
+              <ColumnPreview title="Todo" cards={0} />
+              <ColumnPreview title="In Progress" cards={0} />
+              <ColumnPreview title="Done" cards={0} />
             </div>
           </div>
 
@@ -62,9 +62,6 @@ export default function Home() {
                 <li>• IndexedDB storage keeps state across sessions.</li>
                 <li>• Dialogs for quick edits without leaving context.</li>
               </ul>
-            </div>
-            <div className="rounded-xl border border-border/70 bg-background px-4 py-3 text-xs text-muted-foreground">
-              “It feels like Notion’s calm, but tuned for shipping features.”
             </div>
           </div>
         </section>
