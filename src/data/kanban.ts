@@ -23,3 +23,6 @@ export const KANBAN_COLUMNS: Array<{
 ];
 
 export const DEFAULT_COLUMN_ID = (KANBAN_COLUMNS[0]?.id ?? "Todo") as TaskStatus;
+
+export const DEFAULT_BOARD_ID = "welcome-board";
+export const DEFAULT_BOARD_NAME = "Welcome Board";

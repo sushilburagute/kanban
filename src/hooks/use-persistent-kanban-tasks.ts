@@ -8,8 +8,11 @@ import type { KanbanTask } from "@/types/Tasks";
 
 type TasksUpdater = (previous: KanbanTask[]) => KanbanTask[];
 
-export function usePersistentKanbanTasks(seedTasksFactory: () => KanbanTask[]) {
-  const [tasks, setTasks] = React.useState<KanbanTask[] | null>(null);
+export function usePersistentKanbanTasks(
+  seedTasksFactory: () => KanbanTask[],
+  boardId: string
+) {
+  const [tasks, setTasks] = React.useState<KanbanTask[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const skipNextPersistRef = React.useRef(true);
 
@@ -30,19 +33,27 @@ export function usePersistentKanbanTasks(seedTasksFactory: () => KanbanTask[]) {
         return;
       }
 
+      setIsLoading(true);
+      setTasks([]);
+
       try {
-        const stored = await readStoredTasks();
+        const stored = await readStoredTasks(boardId);
 
         if (isCancelled) return;
 
-        if (stored && stored.length) {
-          setTasks(normalizeTaskOrder(stored));
+        if (stored.tasks) {
+          const normalized = normalizeTaskOrder(stored.tasks);
+          setTasks(normalized);
+          if (stored.migrateLegacy) {
+            await writeStoredTasks(boardId, normalized);
+          }
         } else {
           const seedTasks = getSeedTasks();
           setTasks(seedTasks);
-          await writeStoredTasks(seedTasks);
+          await writeStoredTasks(boardId, seedTasks);
         }
       } catch {
+        if (isCancelled) return;
         const seedTasks = getSeedTasks();
         setTasks(seedTasks);
       } finally {
@@ -53,15 +64,15 @@ export function usePersistentKanbanTasks(seedTasksFactory: () => KanbanTask[]) {
       }
     }
 
-    bootstrap();
+    void bootstrap();
 
     return () => {
       isCancelled = true;
     };
-  }, [getSeedTasks]);
+  }, [boardId, getSeedTasks]);
 
   React.useEffect(() => {
-    if (tasks === null || isLoading) {
+    if (isLoading) {
       return;
     }
 
@@ -70,23 +81,17 @@ export function usePersistentKanbanTasks(seedTasksFactory: () => KanbanTask[]) {
       return;
     }
 
-    void writeStoredTasks(tasks).catch(() => {
+    void writeStoredTasks(boardId, tasks).catch(() => {
       // Ignore transient persistence failures; UI remains usable.
     });
-  }, [tasks, isLoading]);
+  }, [tasks, boardId, isLoading]);
 
   const replaceTasks = React.useCallback((nextTasks: KanbanTask[]) => {
     setTasks(normalizeTaskOrder(nextTasks));
   }, []);
 
   const updateTasks = React.useCallback((updater: TasksUpdater) => {
-    setTasks((previous) => {
-      if (!previous) {
-        return previous;
-      }
-      const next = updater(previous);
-      return normalizeTaskOrder(next);
-    });
+    setTasks((previous) => normalizeTaskOrder(updater(previous)));
   }, []);
 
   return {

@@ -159,3 +159,10 @@ export function generateTaskId() {
   }
   return `task-${Math.random().toString(16).slice(2)}`;
 }
+
+export function generateBoardId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `board-${Math.random().toString(16).slice(2)}`;
+}
