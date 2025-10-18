@@ -2,95 +2,93 @@ import type { KanbanTask, TaskStatus } from "@/types/Tasks";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-const daysFromNow = (offset: number) =>
-  new Date(Date.now() + offset * DAY_IN_MS).toISOString();
+const daysFromNow = (offset: number) => new Date(Date.now() + offset * DAY_IN_MS).toISOString();
 
-const daysAgo = (offset: number) =>
-  new Date(Date.now() - offset * DAY_IN_MS).toISOString();
+const daysAgo = (offset: number) => new Date(Date.now() - offset * DAY_IN_MS).toISOString();
 
 export function createSeedTasks(): KanbanTask[] {
   return [
     {
-      id: "task-landing-refresh",
+      id: "task-tour-overview",
       columnId: "Todo",
       status: "Todo",
-      title: "Refresh landing page hero illustrations",
+      title: "Review the quick tour",
       description:
-        "Align new hero visuals with the updated brand language and craft micro-animations.",
-      labels: ["Design", "Brand"],
+        "Open this card to see the modal, explore the fields, and learn where to update or delete tasks.",
+      labels: ["Guide"],
       order: 0,
       priority: "high",
-      dueDate: daysFromNow(4),
+      dueDate: daysFromNow(3),
       createdAt: daysAgo(6),
       updatedAt: daysAgo(1),
     },
     {
-      id: "task-research-sync",
+      id: "task-create-first",
       columnId: "Todo",
       status: "Todo",
-      title: "Schedule customer discovery interviews",
+      title: "Create your first task",
       description:
-        "Coordinate three customer calls focused on onboarding friction and form hypotheses.",
-      labels: ["Research"],
+        "Click Add task in the header, fill in the fields, and save. Your new task will appear in To Do.",
+      labels: ["Guide"],
       order: 1,
       priority: "medium",
-      dueDate: daysFromNow(9),
+      dueDate: daysFromNow(5),
       createdAt: daysAgo(3),
       updatedAt: daysAgo(2),
     },
     {
-      id: "task-ai-handbook",
+      id: "task-drag-demo",
       columnId: "InProgress",
       status: "InProgress",
-      title: "Draft AI handover guidelines",
+      title: "Drag this card",
       description:
-        "Codify expectations for prompt templates and QA steps before handing off to engineering.",
-      labels: ["Product", "Documentation"],
+        "Press and hold the grip icon on the right, then drag to a different column to reorder or change status.",
+      labels: ["Guide"],
       order: 0,
-      priority: "medium",
+      priority: "low",
       dueDate: daysFromNow(2),
       createdAt: daysAgo(5),
       updatedAt: daysAgo(0),
     },
     {
-      id: "task-automation",
+      id: "task-edit-demo",
       columnId: "InProgress",
       status: "InProgress",
-      title: "Automate weekly analytics snapshot",
+      title: "Edit this card",
       description:
-        "Build lightweight automation that sends the core KPI snapshot to Slack every Monday.",
-      labels: ["Automation", "Growth"],
+        "Click the card body to open the modal, adjust fields such as priority or labels, and save your changes.",
+      labels: ["Guide"],
       order: 1,
-      priority: "high",
-      dueDate: daysFromNow(1),
+      priority: "medium",
+      dueDate: daysFromNow(4),
       createdAt: daysAgo(7),
       updatedAt: daysAgo(0),
     },
     {
-      id: "task-accessibility-audit",
+      id: "task-persistence-check",
       columnId: "Done",
       status: "Done",
-      title: "Complete accessibility audit for dashboard",
+      title: "Confirm data persistence",
       description:
-        "Validate color contrast, keyboard flows, and announce upcoming fixes to the team.",
-      labels: ["Accessibility"],
+        "Refresh the page. Tasks you created or moved should reload exactly where you left them thanks to IndexedDB.",
+      labels: ["Guide"],
       order: 0,
-      priority: "low",
-      dueDate: daysAgo(1),
+      priority: "high",
+      dueDate: daysFromNow(1),
       createdAt: daysAgo(11),
       updatedAt: daysAgo(1),
     },
     {
-      id: "task-launch-post",
+      id: "task-cleanup",
       columnId: "Done",
       status: "Done",
-      title: "Publish launch retrospective blog post",
+      title: "Tailor the board",
       description:
-        "Summarize the launch metrics, lessons learned, and thank the beta cohort.",
-      labels: ["Marketing", "Content"],
+        "Delete this tutorial card once you are comfortable. Feel free to replace it with your own work items.",
+      labels: ["Guide"],
       order: 1,
-      priority: "medium",
-      dueDate: daysAgo(2),
+      priority: "low",
+      dueDate: daysFromNow(6),
       createdAt: daysAgo(14),
       updatedAt: daysAgo(2),
     },
