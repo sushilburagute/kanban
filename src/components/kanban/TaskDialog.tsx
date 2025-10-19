@@ -128,10 +128,10 @@ export function TaskDialog({
                 onChange={(event) =>
                   handleChange("columnId", event.target.value as TaskStatus)
                 }
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-9 w-full rounded-md border border-input bg-background text-foreground px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {columns.map((column) => (
-                  <option key={column.id} value={column.id}>
+                  <option key={column.id} value={column.id} className="bg-background text-foreground">
                     {column.title}
                   </option>
                 ))}
@@ -146,11 +146,17 @@ export function TaskDialog({
                 onChange={(event) =>
                   handleChange("priority", event.target.value as TaskPriority)
                 }
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-9 w-full rounded-md border border-input bg-background text-foreground px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
+                <option value="low" className="bg-background text-foreground">
+                  Low
+                </option>
+                <option value="medium" className="bg-background text-foreground">
+                  Medium
+                </option>
+                <option value="high" className="bg-background text-foreground">
+                  High
+                </option>
               </select>
             </div>
           </div>
