@@ -58,6 +58,10 @@ type SidebarLink = {
   external?: boolean;
 };
 
+type BoardsSidebarSectionHandle = {
+  resetLocalState: () => void;
+};
+
 function SidebarNavMenu({ links }: { links: SidebarLink[] }) {
   const pathname = usePathname();
 
@@ -94,50 +98,116 @@ function SidebarNavMenu({ links }: { links: SidebarLink[] }) {
 
 export function AppSidebar() {
   const { setTheme } = useTheme();
+  const { resetBoards, isLoading: isBoardsLoading } = useBoards();
+  const router = useRouter();
+  const boardsSectionRef = React.useRef<BoardsSidebarSectionHandle | null>(null);
+  const [resetDialogOpen, setResetDialogOpen] = React.useState(false);
+  const [isResetting, setIsResetting] = React.useState(false);
+
+  const handleResetWorkspace = React.useCallback(async () => {
+    if (isResetting) {
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      await resetBoards();
+      setResetDialogOpen(false);
+      boardsSectionRef.current?.resetLocalState();
+      router.push("/");
+    } finally {
+      setIsResetting(false);
+    }
+  }, [isResetting, resetBoards, router]);
 
   return (
-    <Sidebar>
-      <SidebarContent>
-        <SidebarGroup>
-          <div className="flex justify-between items-center pt-3">
-            <Link
-              href="/"
-              className="flex items-center gap-2 rounded-md px-2 py-1 text-2xl font-semibold text-foreground transition-colors hover:bg-muted"
-            >
-              kanban
-            </Link>
-            <SidebarGroupAction
-              title="Toggle theme"
-              type="button"
-              onClick={() => setTheme((val) => (val === "light" ? "dark" : "light"))}
-              className="flex justify-center items-center h-8 w-8 rounded-md border border-border/60 bg-background text-foreground transition-colors hover:bg-muted"
-            >
-              <Sun className="h-[1.1rem] w-[1.1rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-[1.1rem] w-[1.1rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
-            </SidebarGroupAction>
-          </div>
+    <>
+      <Sidebar>
+        <SidebarContent>
+          <SidebarGroup>
+            <div className="flex items-center justify-between gap-2 pt-3">
+              <Link
+                href="/"
+                className="flex items-center gap-2 rounded-md px-2 py-1 text-2xl font-semibold text-foreground transition-colors hover:bg-muted"
+              >
+                kanban
+              </Link>
+              <SidebarGroupAction
+                title="Toggle theme"
+                type="button"
+                onClick={() => setTheme((val) => (val === "light" ? "dark" : "light"))}
+                className="flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-background text-foreground transition-colors hover:bg-muted"
+              >
+                <Sun className="h-[1.1rem] w-[1.1rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-[1.1rem] w-[1.1rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <span className="sr-only">Toggle theme</span>
+              </SidebarGroupAction>
+            </div>
+
+            <SidebarSeparator className="my-4" />
+            <SidebarGroupContent>
+              <SidebarNavMenu links={sidebarLinks} />
+            </SidebarGroupContent>
+          </SidebarGroup>
 
           <SidebarSeparator className="my-4" />
-          <SidebarGroupContent>
-            <SidebarNavMenu links={sidebarLinks} />
-          </SidebarGroupContent>
-        </SidebarGroup>
+          {/* TODO: fix this type */}
+          <BoardsSidebarSection ref={boardsSectionRef} />
+        </SidebarContent>
 
         <SidebarSeparator className="my-4" />
-        <BoardsSidebarSection />
-      </SidebarContent>
+        <SidebarFooter>
+          <SidebarNavMenu links={sidebarFooterLinks} />
+          {!isBoardsLoading ? (
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full justify-start gap-2 text-xs font-medium text-muted-foreground transition-colors hover:text-destructive"
+              onClick={() => setResetDialogOpen(true)}
+              disabled={isResetting}
+            >
+              <Trash2 className="h-4 w-4" />
+              Reset workspace
+            </Button>
+          ) : null}
+        </SidebarFooter>
+      </Sidebar>
 
-      <SidebarSeparator className="my-4" />
-      <SidebarFooter>
-        <SidebarNavMenu links={sidebarFooterLinks} />
-      </SidebarFooter>
-    </Sidebar>
+      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset workspace</DialogTitle>
+            <DialogDescription>
+              Remove every board, task, and preference. A fresh welcome board will be created
+              afterwards.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setResetDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleResetWorkspace}
+              disabled={isResetting}
+            >
+              {isResetting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Reset everything
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
+type BoardsSidebarSectionProps = object;
 
-function BoardsSidebarSection() {
-  const { boards, isLoading, addBoard, deleteBoard, resetBoards } = useBoards();
+const BoardsSidebarSection = React.forwardRef<
+  BoardsSidebarSectionHandle,
+  BoardsSidebarSectionProps
+>((_, ref) => {
+  const { boards, isLoading, addBoard, deleteBoard } = useBoards();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -148,8 +218,15 @@ function BoardsSidebarSection() {
   const [deleteDialog, setDeleteDialog] = React.useState<KanbanBoardMeta | null>(null);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
-  const [resetDialogOpen, setResetDialogOpen] = React.useState(false);
-  const [isResetting, setIsResetting] = React.useState(false);
+
+  React.useImperativeHandle(ref, () => ({
+    resetLocalState: () => {
+      setCreateDialogOpen(false);
+      setNewBoardName("");
+      setDeleteDialog(null);
+      setDeleteError(null);
+    },
+  }));
 
   const handleCreateBoard = React.useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
@@ -193,38 +270,23 @@ function BoardsSidebarSection() {
     }
   }, [boards, deleteBoard, deleteDialog, isDeleting, pathname, router]);
 
-  const handleResetWorkspace = React.useCallback(async () => {
-    if (isResetting) return;
-    setIsResetting(true);
-    setDeleteError(null);
-    try {
-      await resetBoards();
-      setResetDialogOpen(false);
-      setDeleteDialog(null);
-      setNewBoardName("");
-      router.push("/");
-    } finally {
-      setIsResetting(false);
-    }
-  }, [isResetting, resetBoards, router]);
-
   return (
     <>
       <SidebarGroup>
-        <SidebarGroupLabel className="flex items-center justify-between text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Boards
+        <SidebarGroupLabel className="flex items-center justify-between gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          <span>Boards</span>
+          <SidebarGroupAction
+            title="Add board"
+            type="button"
+            onClick={() => setCreateDialogOpen(true)}
+            className="h-8 w-8 rounded-md border border-border/60 bg-background transition-colors hover:bg-muted"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="sr-only">Add board</span>
+          </SidebarGroupAction>
         </SidebarGroupLabel>
-        <SidebarGroupAction
-          title="Add board"
-          type="button"
-          onClick={() => setCreateDialogOpen(true)}
-          className="h-8 w-8 rounded-md border border-border/60 bg-background transition-colors hover:bg-muted"
-        >
-          <Plus className="h-4 w-4" />
-          <span className="sr-only">Add board</span>
-        </SidebarGroupAction>
 
-        <SidebarGroupContent>
+        <SidebarGroupContent className="mt-2">
           {isLoading ? (
             <div className="space-y-2">
               {Array.from({ length: 3 }).map((_, index) => (
@@ -250,11 +312,11 @@ function BoardsSidebarSection() {
                         <span className="truncate">{board.name}</span>
                       </Link>
                     </SidebarMenuButton>
-                    <SidebarMenuAction asChild>
+                    <SidebarMenuAction asChild showOnHover>
                       <button
                         type="button"
                         className={cn(
-                          "ml-1 inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive",
+                          "text-muted-foreground transition-colors hover:text-destructive",
                           boards.length <= 1 && "pointer-events-none opacity-40"
                         )}
                         onClick={(event) => {
@@ -274,17 +336,6 @@ function BoardsSidebarSection() {
               })}
             </SidebarMenu>
           )}
-          {!isLoading ? (
-            <Button
-              type="button"
-              variant="ghost"
-              className="mt-4 w-full justify-start gap-2 text-xs font-medium text-muted-foreground transition-colors hover:text-destructive"
-              onClick={() => setResetDialogOpen(true)}
-            >
-              <Trash2 className="h-4 w-4" />
-              Reset workspace
-            </Button>
-          ) : null}
         </SidebarGroupContent>
       </SidebarGroup>
 
@@ -367,32 +418,7 @@ function BoardsSidebarSection() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reset workspace</DialogTitle>
-            <DialogDescription>
-              Remove every board, task, and preference. A fresh welcome board will be created
-              afterwards.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setResetDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleResetWorkspace}
-              disabled={isResetting}
-            >
-              {isResetting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Reset everything
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
-}
+});
+BoardsSidebarSection.displayName = "BoardsSidebarSection";
