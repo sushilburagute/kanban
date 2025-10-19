@@ -24,8 +24,8 @@ export default function Home() {
             Calm structure for work that never stops moving.
           </h1>
           <p className="max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            A minimal board designed to breathe—not shout. Capture what matters, drag cards when
-            plans change, and let the team scan the week in seconds.
+            A minimal board designed to breathe,not shout. Capture what matters, drag cards when
+            plans change, and stay on top of what matters.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button asChild size="lg" className="w-full gap-2 sm:w-auto">

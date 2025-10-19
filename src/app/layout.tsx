@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
+// @ts-expect-error - side-effect import of global CSS (add a global .d.ts declaring '*.css' to avoid ignore)
 import "./globals.css";
 import { ThemeProvider } from "@/components/contexts/ThemeProvider";
 import { BoardsProvider } from "@/components/contexts/BoardsProvider";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/ui/app-sidebar";
+import { ResponsiveSidebarTrigger } from "@/components/ui/trigger";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -27,8 +29,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         >
           <BoardsProvider>
             <SidebarProvider>
+              <ResponsiveSidebarTrigger />
               <AppSidebar />
-              <SidebarTrigger />
               {children}
             </SidebarProvider>
           </BoardsProvider>

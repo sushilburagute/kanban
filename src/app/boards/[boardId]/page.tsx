@@ -63,7 +63,7 @@ export default function BoardPage({ params }: BoardPageProps) {
   if (boardsLoading || !activeBoard) {
     return (
       <main className="min-h-screen bg-background">
-        <div className="mx-auto flex w-full max-w flex-col gap-6 px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w flex-col gap-6 px-4 py-10 sm:px-6 lg:px-10">
           <KanbanBoardSkeleton columns={KANBAN_COLUMNS.length} />
         </div>
       </main>
@@ -230,7 +230,7 @@ function BoardContent({ boardId, boardName }: { boardId: string; boardName: stri
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="mx-auto flex w-full max-w flex-col gap-6 px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w flex-col gap-6 px-4 py-10 sm:px-6 lg:px-10">
         <section className="space-y-4 rounded-2xl border border-border/70 bg-card/60 p-6 shadow-sm backdrop-blur">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">

@@ -122,17 +122,12 @@ export default function StatsPage() {
       inProgress += snapshot.inProgress;
       todo += snapshot.todo;
 
-      if (
-        snapshot.lastUpdatedAt &&
-        (!lastUpdatedAt || snapshot.lastUpdatedAt > lastUpdatedAt)
-      ) {
+      if (snapshot.lastUpdatedAt && (!lastUpdatedAt || snapshot.lastUpdatedAt > lastUpdatedAt)) {
         lastUpdatedAt = snapshot.lastUpdatedAt;
       }
     }
 
-    const completionRate = totalTasks
-      ? Math.round((done / totalTasks) * 100)
-      : 0;
+    const completionRate = totalTasks ? Math.round((done / totalTasks) * 100) : 0;
 
     return {
       totalBoards: snapshots.length,
@@ -154,11 +149,10 @@ export default function StatsPage() {
     <main className="min-h-screen bg-background px-6 py-16 text-foreground sm:px-10">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-12">
         <header className="space-y-4">
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-            Flow pulse
-          </h1>
+          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">stats</h1>
           <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
-            Review how the work-in-progress pipeline is evolving across your boards. Everything updates automatically from the same data powering your kanban.
+            Review how the work-in-progress pipeline is evolving across your boards. Everything
+            updates automatically from the same data powering your kanban.
           </p>
         </header>
 
@@ -258,9 +252,7 @@ function MetricCard({
         </div>
       </div>
       <div className="mt-4 text-3xl font-semibold">{value}</div>
-      {hint ? (
-        <div className="mt-2 text-xs text-muted-foreground/80">{hint}</div>
-      ) : null}
+      {hint ? <div className="mt-2 text-xs text-muted-foreground/80">{hint}</div> : null}
     </div>
   );
 }
@@ -268,15 +260,9 @@ function MetricCard({
 function BoardCard({ snapshot }: { snapshot: BoardSnapshot }) {
   const { name, total, done, inProgress, todo, lastUpdatedAt, upcomingDueDate } = snapshot;
   const completion = total ? Math.round((done / total) * 100) : 0;
-  const statusLine = [
-    `${done} done`,
-    `${inProgress} in progress`,
-    `${todo} queued`,
-  ].join(" · ");
+  const statusLine = [`${done} done`, `${inProgress} in progress`, `${todo} queued`].join(" · ");
 
-  const lastUpdatedLabel = lastUpdatedAt
-    ? formatTimeDistance(new Date(lastUpdatedAt))
-    : "—";
+  const lastUpdatedLabel = lastUpdatedAt ? formatTimeDistance(new Date(lastUpdatedAt)) : "—";
 
   const upcomingDueLabel = upcomingDueDate
     ? formatTimeDistance(new Date(upcomingDueDate))
@@ -286,9 +272,7 @@ function BoardCard({ snapshot }: { snapshot: BoardSnapshot }) {
     <div className="flex flex-col gap-5 rounded-2xl border border-border/60 bg-card/80 p-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">{name}</h3>
-        <span className="text-xs uppercase tracking-wide text-muted-foreground">
-          {total} cards
-        </span>
+        <span className="text-xs uppercase tracking-wide text-muted-foreground">{total} cards</span>
       </div>
 
       <div>

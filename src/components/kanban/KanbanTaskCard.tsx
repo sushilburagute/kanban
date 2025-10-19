@@ -13,9 +13,9 @@ type KanbanTaskCardProps = {
 };
 
 const priorityAccent: Record<KanbanTask["priority"], string> = {
-  high: "bg-destructive/20 text-destructive",
-  medium: "bg-amber-200 text-amber-900 dark:bg-amber-500/10 dark:text-amber-200",
-  low: "bg-emerald-200 text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200",
+  high: "bg-rose-200 text-rose-900 dark:bg-rose-500/10 dark:text-rose-500",
+  medium: "bg-amber-200 text-amber-900 dark:bg-amber-500/10 dark:text-amber-500",
+  low: "bg-emerald-200 text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-500",
 };
 
 export function KanbanTaskCard({ task, onSelect }: KanbanTaskCardProps) {
@@ -36,9 +36,7 @@ export function KanbanTaskCard({ task, onSelect }: KanbanTaskCardProps) {
   });
 
   const style = React.useMemo<React.CSSProperties>(() => {
-    const translate = transform
-      ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
-      : undefined;
+    const translate = transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined;
 
     return {
       transform: translate,
@@ -86,9 +84,7 @@ export function KanbanTaskCard({ task, onSelect }: KanbanTaskCardProps) {
       onKeyDown={handleKeyDown}
     >
       <div className="flex items-start justify-between gap-2">
-        <h3 className="text-sm font-semibold leading-tight text-foreground">
-          {task.title}
-        </h3>
+        <h3 className="text-sm font-semibold leading-tight text-foreground">{task.title}</h3>
         <button
           type="button"
           className="rounded-md border border-transparent p-1 text-muted-foreground/60 transition-colors hover:border-border hover:bg-muted/40 hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -103,9 +99,7 @@ export function KanbanTaskCard({ task, onSelect }: KanbanTaskCardProps) {
       </div>
 
       {task.description ? (
-        <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
-          {task.description}
-        </p>
+        <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{task.description}</p>
       ) : null}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">

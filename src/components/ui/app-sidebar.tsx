@@ -21,8 +21,6 @@ import {
 } from "@/components/ui/sidebar";
 import {
   KanbanIcon,
-  LayoutDashboardIcon,
-  LockIcon,
   LucideEarth,
   Moon,
   Plus,
@@ -30,6 +28,7 @@ import {
   TerminalSquareIcon,
   Trash2,
   Loader2,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,10 +44,7 @@ import { useBoards } from "@/components/contexts/BoardsProvider";
 import type { KanbanBoardMeta } from "@/types/Board";
 import { cn } from "@/lib/utils";
 
-const sidebarLinks = [
-  { name: "controlPanel", url: "/", icon: <LayoutDashboardIcon /> },
-  { name: "stats", url: "/stats", icon: <LockIcon /> },
-];
+const sidebarLinks = [{ name: "stats", url: "/stats", icon: <BarChart3 /> }];
 
 const sidebarFooterLinks = [
   { name: "howItsMade", url: "https://sush.dev/articles", icon: <LucideEarth />, external: true },
@@ -103,17 +99,24 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-2xl">kanban</SidebarGroupLabel>
-          <SidebarGroupAction
-            title="Toggle theme"
-            type="button"
-            onClick={() => setTheme((val) => (val === "light" ? "dark" : "light"))}
-            className="relative h-8 w-8 rounded-md border border-border/60 bg-background text-foreground transition-colors hover:bg-muted"
-          >
-            <Sun className="h-[1.1rem] w-[1.1rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-[1.1rem] w-[1.1rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
-          </SidebarGroupAction>
+          <div className="flex justify-between items-center pt-3">
+            <Link
+              href="/"
+              className="flex items-center gap-2 rounded-md px-2 py-1 text-2xl font-semibold text-foreground transition-colors hover:bg-muted"
+            >
+              kanban
+            </Link>
+            <SidebarGroupAction
+              title="Toggle theme"
+              type="button"
+              onClick={() => setTheme((val) => (val === "light" ? "dark" : "light"))}
+              className="flex justify-center items-center h-8 w-8 rounded-md border border-border/60 bg-background text-foreground transition-colors hover:bg-muted"
+            >
+              <Sun className="h-[1.1rem] w-[1.1rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-[1.1rem] w-[1.1rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <span className="sr-only">Toggle theme</span>
+            </SidebarGroupAction>
+          </div>
 
           <SidebarSeparator className="my-4" />
           <SidebarGroupContent>
@@ -328,11 +331,7 @@ function BoardsSidebarSection() {
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              form="create-board-form"
-              disabled={isCreating}
-            >
+            <Button type="submit" form="create-board-form" disabled={isCreating}>
               {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create board
             </Button>
@@ -350,16 +349,10 @@ function BoardsSidebarSection() {
             </DialogDescription>
           </DialogHeader>
 
-          {deleteError ? (
-            <p className="text-sm text-destructive">{deleteError}</p>
-          ) : null}
+          {deleteError ? <p className="text-sm text-destructive">{deleteError}</p> : null}
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeleteDialog(null)}
-            >
+            <Button type="button" variant="outline" onClick={() => setDeleteDialog(null)}>
               Cancel
             </Button>
             <Button
@@ -385,11 +378,7 @@ function BoardsSidebarSection() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setResetDialogOpen(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => setResetDialogOpen(false)}>
               Cancel
             </Button>
             <Button

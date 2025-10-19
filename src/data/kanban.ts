@@ -13,12 +13,12 @@ export const KANBAN_COLUMNS: Array<{
   {
     id: "InProgress",
     title: "In Progress",
-    description: "Work currently being executed by the team.",
+    description: "Work currently being executed.",
   },
   {
     id: "Done",
     title: "Done",
-    description: "Completed deliverables that passed review.",
+    description: "Completed, done and dusted.",
   },
 ];
 
