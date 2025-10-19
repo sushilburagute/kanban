@@ -69,7 +69,7 @@ export default function Home() {
     </main>
   );
 }
-
+// TODO: move to a shared component file
 function ColumnPreview({
   title,
   cards,

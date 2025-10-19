@@ -7,18 +7,10 @@ import { useBoards } from "@/components/contexts/BoardsProvider";
 import { createSeedTasks, normalizeTaskOrder } from "@/lib/kanban";
 import { readStoredTasks, writeStoredTasks } from "@/lib/task-storage";
 import type { KanbanTask, TaskStatus } from "@/types/Tasks";
-
-type BoardSnapshot = {
-  id: string;
-  name: string;
-  tasksByStatus: Record<TaskStatus, KanbanTask[]>;
-  total: number;
-  done: number;
-  todo: number;
-  inProgress: number;
-  lastUpdatedAt?: string;
-  upcomingDueDate?: string;
-};
+import { formatTimeDistance } from "@/lib/utils";
+import { BoardCard } from "@/components/stats/BoardCard";
+import { BoardSnapshot } from "@/types/BoardSnapshot";
+import { MetricCard } from "@/components/stats/MetricCard";
 
 export default function StatsPage() {
   const { boards, isLoading } = useBoards();
@@ -228,108 +220,4 @@ export default function StatsPage() {
       </div>
     </main>
   );
-}
-
-function MetricCard({
-  icon,
-  label,
-  value,
-  hint,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  hint?: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-border/70 bg-card/80 p-6">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {label}
-        </span>
-        <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-background text-muted-foreground">
-          {icon}
-        </div>
-      </div>
-      <div className="mt-4 text-3xl font-semibold">{value}</div>
-      {hint ? <div className="mt-2 text-xs text-muted-foreground/80">{hint}</div> : null}
-    </div>
-  );
-}
-
-function BoardCard({ snapshot }: { snapshot: BoardSnapshot }) {
-  const { name, total, done, inProgress, todo, lastUpdatedAt, upcomingDueDate } = snapshot;
-  const completion = total ? Math.round((done / total) * 100) : 0;
-  const statusLine = [`${done} done`, `${inProgress} in progress`, `${todo} queued`].join(" · ");
-
-  const lastUpdatedLabel = lastUpdatedAt ? formatTimeDistance(new Date(lastUpdatedAt)) : "—";
-
-  const upcomingDueLabel = upcomingDueDate
-    ? formatTimeDistance(new Date(upcomingDueDate))
-    : "No upcoming due dates";
-
-  return (
-    <div className="flex flex-col gap-5 rounded-2xl border border-border/60 bg-card/80 p-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">{name}</h3>
-        <span className="text-xs uppercase tracking-wide text-muted-foreground">{total} cards</span>
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Completion</span>
-          <span>{completion}%</span>
-        </div>
-        <div className="mt-2 h-2 rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-primary transition-[width] duration-300"
-            style={{ width: `${completion}%` }}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2 text-sm text-muted-foreground">
-        <p>{statusLine}</p>
-        <p className="flex items-center gap-2">
-          <TimerReset className="h-4 w-4" />
-          <span>Last activity {lastUpdatedLabel}</span>
-        </p>
-        <p className="flex items-center gap-2">
-          <CircleCheck className="h-4 w-4" />
-          <span>{upcomingDueLabel}</span>
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function formatTimeDistance(date: Date) {
-  const formatter = new Intl.RelativeTimeFormat(undefined, {
-    numeric: "auto",
-  });
-
-  const diffMs = date.getTime() - Date.now();
-  const diffMinutes = Math.round(diffMs / (1000 * 60));
-
-  if (Math.abs(diffMinutes) < 60) {
-    return formatter.format(diffMinutes, "minute");
-  }
-
-  const diffHours = Math.round(diffMinutes / 60);
-  if (Math.abs(diffHours) < 24) {
-    return formatter.format(diffHours, "hour");
-  }
-
-  const diffDays = Math.round(diffHours / 24);
-  if (Math.abs(diffDays) < 30) {
-    return formatter.format(diffDays, "day");
-  }
-
-  const diffMonths = Math.round(diffDays / 30);
-  if (Math.abs(diffMonths) < 12) {
-    return formatter.format(diffMonths, "month");
-  }
-
-  const diffYears = Math.round(diffMonths / 12);
-  return formatter.format(diffYears, "year");
 }

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
-// @ts-expect-error - side-effect import of global CSS (add a global .d.ts declaring '*.css' to avoid ignore)
 import "./globals.css";
 import { ThemeProvider } from "@/components/contexts/ThemeProvider";
 import { BoardsProvider } from "@/components/contexts/BoardsProvider";
