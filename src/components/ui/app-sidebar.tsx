@@ -20,7 +20,7 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import {
-  KanbanIcon,
+  SquareKanban,
   LucideEarth,
   Moon,
   Plus,
@@ -308,7 +308,7 @@ const BoardsSidebarSection = React.forwardRef<
                           isActive ? "bg-muted text-primary" : "hover:bg-muted"
                         )}
                       >
-                        <KanbanIcon className="h-4 w-4 shrink-0" />
+                        <SquareKanban className="h-4 w-4 shrink-0" />
                         <span className="truncate">{board.name}</span>
                       </Link>
                     </SidebarMenuButton>

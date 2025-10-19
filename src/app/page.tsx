@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Kanban } from "lucide-react";
+import { ArrowRight, SquareKanban } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useBoards } from "@/components/contexts/BoardsProvider";
@@ -17,7 +17,7 @@ export default function Home() {
       <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col justify-center gap-16 px-6 py-24 sm:px-10">
         <header className="space-y-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs uppercase tracking-[0.3em] text-muted-foreground">
-            <Kanban className="h-3.5 w-3.5" />
+            <SquareKanban className="h-3.5 w-3.5" />
             Kanban workspace
           </div>
           <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
