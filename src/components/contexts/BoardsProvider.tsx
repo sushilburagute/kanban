@@ -11,6 +11,7 @@ import {
   clearAllStoredData,
 } from "@/lib/task-storage";
 import type { KanbanBoardMeta } from "@/types/Board";
+import { trackEvent } from "@/lib/analytics";
 
 type AddBoardOptions = {
   withSeedData?: boolean;
@@ -73,6 +74,11 @@ function useBoardsInternal(): BoardsContextValue {
     }
 
     setBoards((prev) => sortBoards([...prev, board]));
+    trackEvent("board_create", {
+      board_id: board.id,
+      name_length: board.name.length,
+      with_seed_data: withSeedData,
+    });
 
     return board;
   }, []);
@@ -81,6 +87,7 @@ function useBoardsInternal(): BoardsContextValue {
     async (boardId: string) => {
       await deleteStoredBoard(boardId);
       setBoards((prev) => sortBoards(prev.filter((board) => board.id !== boardId)));
+      trackEvent("board_delete", { board_id: boardId });
       return true;
     },
     []
@@ -91,6 +98,7 @@ function useBoardsInternal(): BoardsContextValue {
     try {
       await clearAllStoredData();
       setBoards([]);
+      trackEvent("workspace_reset");
     } finally {
       setIsLoading(false);
     }

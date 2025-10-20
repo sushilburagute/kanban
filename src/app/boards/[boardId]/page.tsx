@@ -22,6 +22,7 @@ import {
 } from "@/lib/kanban";
 import type { KanbanTask, TaskStatus } from "@/types/Tasks";
 import { CreateBoardDialog } from "@/components/ui/boardsSidebarSection";
+import { trackEvent } from "@/lib/analytics";
 
 type TaskEditorState =
   | { mode: "closed" }
@@ -259,11 +260,12 @@ function BoardContent({ boardId, boardName }: { boardId: string; boardName: stri
       const timestamp = new Date().toISOString();
 
       if (taskEditor.mode === "create") {
+        const newTaskId = generateTaskId();
         updateTasks((previous) => {
           const nextOrder = previous.filter((task) => task.columnId === values.columnId).length;
 
           const newTask: KanbanTask = {
-            id: generateTaskId(),
+            id: newTaskId,
             columnId: values.columnId,
             status: values.columnId,
             title: normalizedTitle,
@@ -277,6 +279,14 @@ function BoardContent({ boardId, boardName }: { boardId: string; boardName: stri
           };
 
           return [...previous, newTask];
+        });
+        trackEvent("task_create", {
+          board_id: boardId,
+          task_id: newTaskId,
+          column_id: values.columnId,
+          has_due_date: Boolean(dueDate),
+          label_count: labels.length,
+          priority: values.priority,
         });
       } else if (taskEditor.mode === "edit") {
         const taskId = taskEditor.taskId;
@@ -300,11 +310,19 @@ function BoardContent({ boardId, boardName }: { boardId: string; boardName: stri
             };
           })
         );
+        trackEvent("task_update", {
+          board_id: boardId,
+          task_id: taskId,
+          column_id: values.columnId,
+          has_due_date: Boolean(dueDate),
+          label_count: labels.length,
+          priority: values.priority,
+        });
       }
 
       setTaskEditor({ mode: "closed" });
     },
-    [isReady, taskEditor, updateTasks]
+    [boardId, isReady, taskEditor, updateTasks]
   );
 
   const handleTaskDelete = React.useCallback(() => {
@@ -313,9 +331,16 @@ function BoardContent({ boardId, boardName }: { boardId: string; boardName: stri
     }
 
     const taskId = taskEditor.taskId;
+    const task = readyTasks.find((item) => item.id === taskId);
     updateTasks((previous) => previous.filter((task) => task.id !== taskId));
     setTaskEditor({ mode: "closed" });
-  }, [isReady, taskEditor, updateTasks]);
+    trackEvent("task_delete", {
+      board_id: boardId,
+      task_id: taskId,
+      column_id: task?.columnId,
+      had_due_date: Boolean(task?.dueDate),
+    });
+  }, [boardId, isReady, readyTasks, taskEditor, updateTasks]);
 
   const dialogMode: "create" | "edit" = taskEditor.mode === "edit" ? "edit" : "create";
   const isDialogOpen = taskEditor.mode !== "closed";

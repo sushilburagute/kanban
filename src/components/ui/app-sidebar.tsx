@@ -38,6 +38,7 @@ import {
 import type { SidebarLink } from "@/types/SidebarLink";
 import { SidebarNavMenu } from "./sidebarNavMenu";
 import { BoardsSidebarSection, type BoardsSidebarSectionHandle } from "./boardsSidebarSection";
+import { trackEvent } from "@/lib/analytics";
 
 const sidebarLinks: SidebarLink[] = [{ name: "stats", url: "/stats", icon: <BarChart3 /> }];
 
@@ -56,7 +57,11 @@ export function AppSidebar() {
   const [isResetting, setIsResetting] = React.useState(false);
 
   const handleToggleTheme = React.useCallback(() => {
-    setTheme((val) => (val === "light" ? "dark" : "light"));
+    setTheme((val) => {
+      const next = val === "light" ? "dark" : "light";
+      trackEvent("theme_toggle", { theme: next });
+      return next;
+    });
   }, [setTheme]);
 
   const handleResetWorkspace = React.useCallback(async () => {
