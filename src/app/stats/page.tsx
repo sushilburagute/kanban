@@ -145,7 +145,7 @@ export default function StatsPage() {
   const isReady = !isLoading && !loadingSnapshots;
 
   return (
-    <main className="min-h-screen bg-background px-6 py-16 text-foreground sm:px-10">
+    <main className="min-h-screen bg-background w-full px-6 py-16 text-foreground sm:px-10">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-12">
         <header className="space-y-4">
           <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">stats</h1>

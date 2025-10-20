@@ -200,8 +200,6 @@ function BoardsList({ boards, isLoading, activePath, onDeleteRequest }: BoardsLi
     );
   }
 
-  const canDelete = boards.length > 1;
-
   return (
     <SidebarMenu>
       {boards.map((board) => {
@@ -225,14 +223,10 @@ function BoardsList({ boards, isLoading, activePath, onDeleteRequest }: BoardsLi
             <SidebarMenuAction asChild showOnHover>
               <button
                 type="button"
-                className={cn(
-                  "text-muted-foreground transition-colors hover:text-destructive",
-                  !canDelete && "pointer-events-none opacity-40"
-                )}
+                className="text-muted-foreground transition-colors hover:text-destructive"
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
-                  if (!canDelete) return;
                   onDeleteRequest(board);
                 }}
               >
@@ -257,7 +251,7 @@ type CreateBoardDialogProps = {
   onCancel: () => void;
 };
 
-function CreateBoardDialog({
+export function CreateBoardDialog({
   open,
   onOpenChange,
   onSubmit,

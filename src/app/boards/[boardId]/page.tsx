@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, SquareKanban } from "lucide-react";
 
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { KanbanBoardSkeleton, KanbanStatsSkeleton } from "@/components/kanban/KanbanSkeleton";
@@ -21,6 +21,7 @@ import {
   toDateInputValue,
 } from "@/lib/kanban";
 import type { KanbanTask, TaskStatus } from "@/types/Tasks";
+import { CreateBoardDialog } from "@/components/ui/boardsSidebarSection";
 
 type TaskEditorState =
   | { mode: "closed" }
@@ -35,7 +36,7 @@ type BoardPageProps = {
 
 export default function BoardPage({ params }: BoardPageProps) {
   const router = useRouter();
-  const { boards, isLoading: boardsLoading } = useBoards();
+  const { boards, isLoading: boardsLoading, addBoard } = useBoards();
 
   const paramsPromise = React.useMemo(
     () => params ?? Promise.resolve<BoardPageParams>({}),
@@ -50,6 +51,42 @@ export default function BoardPage({ params }: BoardPageProps) {
     [boards, requestedBoardId]
   );
 
+  const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
+  const [newBoardName, setNewBoardName] = React.useState("");
+  const [isCreatingBoard, setIsCreatingBoard] = React.useState(false);
+
+  const handleCreateBoardSubmit = React.useCallback(
+    async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (isCreatingBoard) return;
+
+      const name = newBoardName.trim();
+
+      setIsCreatingBoard(true);
+      try {
+        const board = await addBoard(name);
+        setCreateDialogOpen(false);
+        setNewBoardName("");
+        router.push(`/boards/${board.id}`);
+      } finally {
+        setIsCreatingBoard(false);
+      }
+    },
+    [addBoard, isCreatingBoard, newBoardName, router]
+  );
+
+  const handleCreateDialogOpenChange = React.useCallback((open: boolean) => {
+    setCreateDialogOpen(open);
+    if (!open) {
+      setNewBoardName("");
+    }
+  }, []);
+
+  const handleCreateDialogCancel = React.useCallback(() => {
+    setCreateDialogOpen(false);
+    setNewBoardName("");
+  }, []);
+
   React.useEffect(() => {
     if (boardsLoading) return;
 
@@ -60,7 +97,53 @@ export default function BoardPage({ params }: BoardPageProps) {
     }
   }, [boardsLoading, activeBoard, boards, router]);
 
-  if (boardsLoading || !activeBoard) {
+  if (boardsLoading) {
+    return (
+      <main className="min-h-screen bg-background w-full">
+        <div className="mx-auto flex w-full max-w flex-col gap-6 px-4 py-10 sm:px-6 lg:px-10">
+          <KanbanBoardSkeleton columns={KANBAN_COLUMNS.length} />
+        </div>
+      </main>
+    );
+  }
+
+  if (!activeBoard) {
+    if (boards.length === 0) {
+      return (
+        <>
+          <main className="min-h-screen bg-background w-full">
+            <div className="mx-auto my-auto flex w-full max-w h-full flex-1 flex-col items-center justify-center px-4 py-24 sm:px-6 lg:px-10">
+              <div className="flex max-w-md flex-col items-center gap-5 text-center">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                  <SquareKanban className="h-6 w-6" />
+                </span>
+                <div className="space-y-2">
+                  <h1 className="text-2xl font-semibold text-foreground">No boards yet</h1>
+                  <p className="text-sm text-muted-foreground">
+                    Create your first board to start organizing tasks and tracking progress.
+                  </p>
+                </div>
+                <Button size="lg" onClick={() => setCreateDialogOpen(true)}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Create board
+                </Button>
+              </div>
+            </div>
+          </main>
+
+          <CreateBoardDialog
+            open={createDialogOpen}
+            onOpenChange={handleCreateDialogOpenChange}
+            onSubmit={handleCreateBoardSubmit}
+            isCreating={isCreatingBoard}
+            name={newBoardName}
+            onNameChange={(event) => setNewBoardName(event.target.value)}
+            onCancel={handleCreateDialogCancel}
+          />
+        </>
+      );
+    }
+
     return (
       <main className="min-h-screen bg-background w-full">
         <div className="mx-auto flex w-full max-w flex-col gap-6 px-4 py-10 sm:px-6 lg:px-10">

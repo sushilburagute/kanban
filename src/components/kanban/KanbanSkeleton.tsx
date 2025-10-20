@@ -9,12 +9,9 @@ type KanbanBoardSkeletonProps = {
   cardsPerColumn?: number;
 };
 
-export function KanbanBoardSkeleton({
-  columns,
-  cardsPerColumn = 3,
-}: KanbanBoardSkeletonProps) {
+export function KanbanBoardSkeleton({ columns, cardsPerColumn = 3 }: KanbanBoardSkeletonProps) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
       {Array.from({ length: columns }).map((_, columnIndex) => (
         <div
           key={columnIndex}
@@ -48,10 +45,7 @@ export function KanbanStatsSkeleton({ count }: { count: number }) {
   return (
     <div className="grid gap-4 sm:grid-cols-3">
       {Array.from({ length: count }).map((_, index) => (
-        <div
-          key={index}
-          className="rounded-xl border border-border/60 bg-muted/40 p-4"
-        >
+        <div key={index} className="rounded-xl border border-border/60 bg-muted/40 p-4">
           <Skeleton className="h-3 w-20" />
           <Skeleton className="mt-2 h-8 w-12" />
         </div>

@@ -2,20 +2,8 @@
 
 import * as React from "react";
 
-import { DEFAULT_BOARD_ID, DEFAULT_BOARD_NAME } from "@/data/kanban";
-import {
-  generateBoardId,
-  createSeedTasks,
-  normalizeTaskOrder,
-} from "@/lib/kanban";
-import {
-  deleteStoredBoard,
-  readBoards,
-  readStoredTasks,
-  writeBoard,
-  writeStoredTasks,
-  clearAllStoredData,
-} from "@/lib/task-storage";
+import { generateBoardId } from "@/lib/kanban";
+import { deleteStoredBoard, readBoards, writeBoard, clearAllStoredData } from "@/lib/task-storage";
 import type { KanbanBoardMeta } from "@/types/Board";
 
 type BoardsContextValue = {
@@ -33,30 +21,9 @@ function sortBoards(boards: KanbanBoardMeta[]) {
   return [...boards].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
-async function ensureDefaultBoardExists() {
+async function loadBoards() {
   const boards = await readBoards();
-
-  if (boards.length > 0) {
-    return sortBoards(boards);
-  }
-
-  const timestamp = new Date().toISOString();
-  const defaultBoard: KanbanBoardMeta = {
-    id: DEFAULT_BOARD_ID,
-    name: DEFAULT_BOARD_NAME,
-    createdAt: timestamp,
-    updatedAt: timestamp,
-  };
-
-  await writeBoard(defaultBoard);
-
-  const existingTasks = await readStoredTasks(DEFAULT_BOARD_ID);
-  if (!existingTasks.tasks || existingTasks.tasks.length === 0) {
-    const seedTasks = normalizeTaskOrder(createSeedTasks());
-    await writeStoredTasks(DEFAULT_BOARD_ID, seedTasks);
-  }
-
-  return [defaultBoard];
+  return sortBoards(boards);
 }
 
 function useBoardsInternal(): BoardsContextValue {
@@ -66,7 +33,7 @@ function useBoardsInternal(): BoardsContextValue {
   const refreshBoards = React.useCallback(async () => {
     setIsLoading(true);
     try {
-      const existing = await ensureDefaultBoardExists();
+      const existing = await loadBoards();
       setBoards(existing);
     } finally {
       setIsLoading(false);
@@ -96,23 +63,18 @@ function useBoardsInternal(): BoardsContextValue {
 
   const deleteBoard = React.useCallback(
     async (boardId: string) => {
-      if (boards.length <= 1) {
-        return false;
-      }
-
       await deleteStoredBoard(boardId);
       setBoards((prev) => sortBoards(prev.filter((board) => board.id !== boardId)));
       return true;
     },
-    [boards.length]
+    []
   );
 
   const resetBoards = React.useCallback(async () => {
     setIsLoading(true);
     try {
       await clearAllStoredData();
-      const existing = await ensureDefaultBoardExists();
-      setBoards(existing);
+      setBoards([]);
     } finally {
       setIsLoading(false);
     }
