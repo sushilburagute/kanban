@@ -23,6 +23,8 @@ import {
   SidebarGroup,
   SidebarGroupAction,
   SidebarGroupContent,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import {
@@ -155,19 +157,24 @@ function SidebarFooterSection({
 }: SidebarFooterSectionProps) {
   return (
     <SidebarFooter>
-      <SidebarNavMenu links={links} />
       {!isLoading ? (
-        <Button
-          type="button"
-          variant="ghost"
-          className="w-full justify-start gap-2 text-xs font-medium text-muted-foreground transition-colors hover:text-destructive"
-          onClick={onResetClick}
-          disabled={isResetting}
-        >
-          <Trash2 className="h-4 w-4" />
-          Reset workspace
-        </Button>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            type="button"
+            onClick={onResetClick}
+            disabled={isResetting}
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted hover:text-rose-500"
+          >
+            {isResetting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+            <span className="truncate">Reset workspace</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
       ) : null}
+      <SidebarNavMenu links={links} />
     </SidebarFooter>
   );
 }

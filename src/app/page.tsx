@@ -39,63 +39,7 @@ export default function Home() {
             </span>
           </div>
         </header>
-
-        <section className="grid gap-6 sm:grid-cols-2">
-          <div className="rounded-2xl border border-dashed border-border bg-card p-6">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Three swimlanes. Infinite flow.
-            </h2>
-            <div className="mt-6 grid gap-4">
-              <ColumnPreview title="Todo" cards={0} />
-              <ColumnPreview title="In Progress" cards={0} />
-              <ColumnPreview title="Done" cards={0} />
-            </div>
-          </div>
-
-          <div className="flex flex-col justify-between gap-6 rounded-2xl border border-border bg-card p-6">
-            <div className="space-y-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Why it stays light
-              </h2>
-              <ul className="space-y-3 text-sm text-muted-foreground">
-                <li>• DND built-in for frictionless prioritising.</li>
-                <li>• IndexedDB storage keeps state across sessions.</li>
-                <li>• Dialogs for quick edits without leaving context.</li>
-              </ul>
-            </div>
-          </div>
-        </section>
       </div>
     </main>
-  );
-}
-// TODO: move to a shared component file
-function ColumnPreview({
-  title,
-  cards,
-  muted = false,
-}: {
-  title: string;
-  cards: number;
-  muted?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-xl border border-border/70 bg-background/80 p-4 ${
-        muted ? "opacity-70" : ""
-      }`}
-    >
-      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {title}
-      </div>
-      <div className="mt-3 space-y-2">
-        {Array.from({ length: cards }).map((_, index) => (
-          <div
-            key={`${title}-${index}`}
-            className="h-10 rounded-lg border border-border/60 bg-card/80"
-          />
-        ))}
-      </div>
-    </div>
   );
 }

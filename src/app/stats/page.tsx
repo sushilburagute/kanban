@@ -4,6 +4,7 @@ import * as React from "react";
 import { CircleCheck, Kanban, ListChecks, TimerReset } from "lucide-react";
 
 import { useBoards } from "@/components/contexts/BoardsProvider";
+import { DEFAULT_BOARD_ID } from "@/data/kanban";
 import { createSeedTasks, normalizeTaskOrder } from "@/lib/kanban";
 import { readStoredTasks, writeStoredTasks } from "@/lib/task-storage";
 import type { KanbanTask, TaskStatus } from "@/types/Tasks";
@@ -31,10 +32,16 @@ export default function StatsPage() {
       for (const board of boards) {
         const stored = await readStoredTasks(board.id);
 
-        let tasks = stored.tasks ?? seedTasksFactory();
-        tasks = normalizeTaskOrder(tasks);
+        let tasks: KanbanTask[];
+        if (stored.tasks) {
+          tasks = normalizeTaskOrder(stored.tasks);
+        } else if (board.id === DEFAULT_BOARD_ID) {
+          tasks = normalizeTaskOrder(seedTasksFactory());
+        } else {
+          tasks = [];
+        }
 
-        if (stored.migrateLegacy) {
+        if (stored.migrateLegacy || (!stored.tasks && board.id === DEFAULT_BOARD_ID)) {
           await writeStoredTasks(board.id, tasks);
         }
 

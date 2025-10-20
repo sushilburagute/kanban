@@ -88,8 +88,6 @@ function useBoardsInternal(): BoardsContextValue {
     };
 
     await writeBoard(board);
-    const seedTasks = normalizeTaskOrder(createSeedTasks());
-    await writeStoredTasks(board.id, seedTasks);
 
     setBoards((prev) => sortBoards([...prev, board]));
 

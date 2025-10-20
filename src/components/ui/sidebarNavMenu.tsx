@@ -1,10 +1,17 @@
-import { SidebarLink } from "@/types/SidebarLink";
-import { usePathname } from "next/navigation";
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "./sidebar";
-import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { type ReactNode } from "react";
 
-export function SidebarNavMenu({ links }: { links: SidebarLink[] }) {
+import { cn } from "@/lib/utils";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "./sidebar";
+import { SidebarLink } from "@/types/SidebarLink";
+
+type SidebarNavMenuProps = {
+  links: SidebarLink[];
+  children?: ReactNode;
+};
+
+export function SidebarNavMenu({ links, children }: SidebarNavMenuProps) {
   const pathname = usePathname();
 
   return (
@@ -34,6 +41,7 @@ export function SidebarNavMenu({ links }: { links: SidebarLink[] }) {
           </SidebarMenuItem>
         );
       })}
+      {children}
     </SidebarMenu>
   );
 }
