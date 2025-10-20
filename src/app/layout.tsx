@@ -6,6 +6,7 @@ import { BoardsProvider } from "@/components/contexts/BoardsProvider";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/ui/app-sidebar";
 import { ResponsiveSidebarTrigger } from "@/components/ui/trigger";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </SidebarProvider>
           </BoardsProvider>
         </ThemeProvider>
+        <GoogleAnalytics gaId="G-ZW5YN6VN7L" />
       </body>
     </html>
   );
