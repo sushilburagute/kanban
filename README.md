@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kanban Workspace
+
+Kanban Workspace is a minimalist board for planning projects and keeping teams aligned. It runs entirely in the browser, stores everything locally in IndexedDB, and keeps momentum high with drag-and-drop, quick dialogs, and concise stats.
+
+## Features
+
+- 🗂️ Multiple boards with optional “starter pack” sample tasks when you create a board.
+- ↕️ Column-based drag-and-drop powered by [`@dnd-kit`](https://github.com/clauderic/dnd-kit).
+- 💾 Local-first persistence—no accounts, no backend, everything stays on your device.
+- 🌗 Light/dark theme toggle and responsive sidebar navigation.
+- 📊 Stats dashboard summarising board totals, completion rate, and last activity.
+- 🧹 Workspace reset flow to clear every board and task in one click.
+
+## Tech Stack
+
+- [Next.js 15 App Router](https://nextjs.org/docs/app)
+- [React 19](https://react.dev/)
+- [`@dnd-kit` sortable](https://github.com/clauderic/dnd-kit)
+- [Lucide](https://lucide.dev/) icon set
+- Tailwind CSS with shadcn-inspired primitives
+
+## Requirements
+
+- Node.js 20 or newer (matching the Next.js 15 support matrix)
+- npm 9+ (feel free to swap in pnpm/yarn/bun and adjust commands)
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies and run the development server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to explore the workspace.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Useful scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run dev` – start the Turbopack dev server.
+- `npm run build` – create the production build.
+- `npm run start` – serve the production build.
+- `npm run lint` – run ESLint with Next.js defaults.
 
-## Learn More
+## Usage Tips
 
-To learn more about Next.js, take a look at the following resources:
+- **Create boards:** Use the sidebar “Add board” button or the empty-state CTA. Toggle **Include starter tasks** to seed the board with curated sample cards.
+- **Organise tasks:** Drag cards between columns to change status and click any card to edit or delete.
+- **Reset workspace:** The sidebar footer includes **Reset workspace**, which wipes all boards and tasks from IndexedDB.
+- **Review stats:** Visit `/stats` for per-board totals, completion rate, and upcoming due dates.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Layout
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+├─ app/                # Routes for home, boards, stats
+├─ components/         # UI primitives and kanban-specific components
+├─ data/               # Static configuration (default columns, labels)
+├─ hooks/              # Shared hooks (persistent tasks, etc.)
+├─ lib/                # Domain helpers and IndexedDB access
+└─ types/              # TypeScript domain models
+```
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Any platform that supports Next.js 15 works out of the box. Deploying to [Vercel](https://vercel.com/) is as easy as connecting the repository—no environment variables are required because storage is browser-side.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Contributing
+
+Issues and pull requests are welcome. If you notice a UX papercut or want to expand the analytics, open a discussion. Before submitting changes, run `npm run lint` to keep the codebase consistent.

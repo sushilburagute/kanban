@@ -198,8 +198,8 @@ function ResetWorkspaceDialog({
         <DialogHeader>
           <DialogTitle>Reset workspace</DialogTitle>
           <DialogDescription>
-            Remove every board, task, and preference. You'll start with a clean workspace and can
-            create new boards from scratch afterwards.
+            Remove every board, task, and preference. You&apos;ll start with a clean workspace and
+            can create new boards from scratch afterwards.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
