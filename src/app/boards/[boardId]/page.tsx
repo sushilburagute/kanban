@@ -54,6 +54,7 @@ export default function BoardPage({ params }: BoardPageProps) {
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
   const [newBoardName, setNewBoardName] = React.useState("");
   const [isCreatingBoard, setIsCreatingBoard] = React.useState(false);
+  const [createWithSeedData, setCreateWithSeedData] = React.useState(false);
 
   const handleCreateBoardSubmit = React.useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
@@ -64,27 +65,30 @@ export default function BoardPage({ params }: BoardPageProps) {
 
       setIsCreatingBoard(true);
       try {
-        const board = await addBoard(name);
+        const board = await addBoard(name, { withSeedData: createWithSeedData });
         setCreateDialogOpen(false);
         setNewBoardName("");
+        setCreateWithSeedData(false);
         router.push(`/boards/${board.id}`);
       } finally {
         setIsCreatingBoard(false);
       }
     },
-    [addBoard, isCreatingBoard, newBoardName, router]
+    [addBoard, createWithSeedData, isCreatingBoard, newBoardName, router]
   );
 
   const handleCreateDialogOpenChange = React.useCallback((open: boolean) => {
     setCreateDialogOpen(open);
     if (!open) {
       setNewBoardName("");
+      setCreateWithSeedData(false);
     }
   }, []);
 
   const handleCreateDialogCancel = React.useCallback(() => {
     setCreateDialogOpen(false);
     setNewBoardName("");
+    setCreateWithSeedData(false);
   }, []);
 
   React.useEffect(() => {
@@ -139,6 +143,8 @@ export default function BoardPage({ params }: BoardPageProps) {
             name={newBoardName}
             onNameChange={(event) => setNewBoardName(event.target.value)}
             onCancel={handleCreateDialogCancel}
+            withSeedData={createWithSeedData}
+            onSeedToggle={(value) => setCreateWithSeedData(value)}
           />
         </>
       );

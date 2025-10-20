@@ -2,14 +2,24 @@
 
 import * as React from "react";
 
-import { generateBoardId } from "@/lib/kanban";
-import { deleteStoredBoard, readBoards, writeBoard, clearAllStoredData } from "@/lib/task-storage";
+import { createSeedTasks, generateBoardId, normalizeTaskOrder } from "@/lib/kanban";
+import {
+  deleteStoredBoard,
+  readBoards,
+  writeBoard,
+  writeStoredTasks,
+  clearAllStoredData,
+} from "@/lib/task-storage";
 import type { KanbanBoardMeta } from "@/types/Board";
+
+type AddBoardOptions = {
+  withSeedData?: boolean;
+};
 
 type BoardsContextValue = {
   boards: KanbanBoardMeta[];
   isLoading: boolean;
-  addBoard: (name: string) => Promise<KanbanBoardMeta>;
+  addBoard: (name: string, options?: AddBoardOptions) => Promise<KanbanBoardMeta>;
   deleteBoard: (boardId: string) => Promise<boolean>;
   refreshBoards: () => Promise<void>;
   resetBoards: () => Promise<void>;
@@ -44,7 +54,8 @@ function useBoardsInternal(): BoardsContextValue {
     void refreshBoards();
   }, [refreshBoards]);
 
-  const addBoard = React.useCallback(async (name: string) => {
+  const addBoard = React.useCallback(async (name: string, options?: AddBoardOptions) => {
+    const { withSeedData = false } = options ?? {};
     const trimmedName = name.trim();
     const timestamp = new Date().toISOString();
     const board: KanbanBoardMeta = {
@@ -55,6 +66,11 @@ function useBoardsInternal(): BoardsContextValue {
     };
 
     await writeBoard(board);
+
+    if (withSeedData) {
+      const seedTasks = normalizeTaskOrder(createSeedTasks());
+      await writeStoredTasks(board.id, seedTasks);
+    }
 
     setBoards((prev) => sortBoards([...prev, board]));
 

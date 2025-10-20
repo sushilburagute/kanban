@@ -47,6 +47,7 @@ export const BoardsSidebarSection = React.forwardRef<
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
   const [newBoardName, setNewBoardName] = React.useState("");
   const [isCreating, setIsCreating] = React.useState(false);
+  const [createWithSeedData, setCreateWithSeedData] = React.useState(false);
 
   const [deleteDialog, setDeleteDialog] = React.useState<KanbanBoardMeta | null>(null);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
@@ -56,6 +57,7 @@ export const BoardsSidebarSection = React.forwardRef<
     resetLocalState: () => {
       setCreateDialogOpen(false);
       setNewBoardName("");
+      setCreateWithSeedData(false);
       setDeleteDialog(null);
       setDeleteError(null);
     },
@@ -70,15 +72,16 @@ export const BoardsSidebarSection = React.forwardRef<
 
       setIsCreating(true);
       try {
-        const board = await addBoard(name);
+        const board = await addBoard(name, { withSeedData: createWithSeedData });
         setCreateDialogOpen(false);
         setNewBoardName("");
+        setCreateWithSeedData(false);
         router.push(`/boards/${board.id}`);
       } finally {
         setIsCreating(false);
       }
     },
-    [addBoard, isCreating, newBoardName, router]
+    [addBoard, createWithSeedData, isCreating, newBoardName, router]
   );
 
   const handleDeleteBoard = React.useCallback(async () => {
@@ -109,6 +112,7 @@ export const BoardsSidebarSection = React.forwardRef<
     setCreateDialogOpen(open);
     if (!open) {
       setNewBoardName("");
+      setCreateWithSeedData(false);
     }
   };
 
@@ -144,7 +148,10 @@ export const BoardsSidebarSection = React.forwardRef<
         onCancel={() => {
           setCreateDialogOpen(false);
           setNewBoardName("");
+          setCreateWithSeedData(false);
         }}
+        withSeedData={createWithSeedData}
+        onSeedToggle={(value) => setCreateWithSeedData(value)}
       />
 
       <DeleteBoardDialog
@@ -249,6 +256,8 @@ type CreateBoardDialogProps = {
   name: string;
   onNameChange: React.ChangeEventHandler<HTMLInputElement>;
   onCancel: () => void;
+  withSeedData: boolean;
+  onSeedToggle: (checked: boolean) => void;
 };
 
 export function CreateBoardDialog({
@@ -259,6 +268,8 @@ export function CreateBoardDialog({
   name,
   onNameChange,
   onCancel,
+  withSeedData,
+  onSeedToggle,
 }: CreateBoardDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -271,17 +282,37 @@ export function CreateBoardDialog({
         </DialogHeader>
 
         <form id="create-board-form" className="space-y-4" onSubmit={onSubmit}>
-          <div className="space-y-2">
-            <label htmlFor="board-name" className="text-sm font-medium text-foreground">
-              Board name
-            </label>
-            <Input
-              id="board-name"
-              autoFocus
-              placeholder="Growth roadmap"
-              value={name}
-              onChange={onNameChange}
-            />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="board-name" className="text-sm font-medium text-foreground">
+                Board name
+              </label>
+              <Input
+                id="board-name"
+                autoFocus
+                placeholder="Growth roadmap"
+                value={name}
+                onChange={onNameChange}
+              />
+            </div>
+
+            <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/30 p-3">
+              <input
+                id="board-seed"
+                type="checkbox"
+                className="mt-1 h-4 w-4 rounded border-border accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                checked={withSeedData}
+                onChange={(event) => onSeedToggle(event.target.checked)}
+              />
+              <div className="space-y-1 text-left">
+                <label htmlFor="board-seed" className="text-sm font-medium text-foreground">
+                  Include starter tasks
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  Adds a curated set of sample cards so you can explore the workflow immediately.
+                </p>
+              </div>
+            </div>
           </div>
         </form>
 
