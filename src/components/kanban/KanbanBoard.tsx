@@ -5,232 +5,289 @@ import {
   closestCorners,
   DndContext,
   DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  arrayMove,
+  horizontalListSortingStrategy,
+  SortableContext,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import { Plus, X } from "lucide-react";
 
-import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
-import type { KanbanTask, TaskStatus } from "@/types/Tasks";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import type { BoardColumn, KanbanTask } from "@/types/kanban";
 
-import { KanbanTaskCard } from "./KanbanTaskCard";
 import { KanbanColumn } from "./KanbanColumn";
-import { KanbanColumnType } from "@/types/KanbanColumn";
+import { TaskCardGhost } from "./KanbanTaskCard";
+
+type DragData = { type: "task" | "column" | "column-drop"; columnId?: string };
 
 type KanbanBoardProps = {
-  columns: KanbanColumnType[];
+  columns: BoardColumn[];
+  /** Tasks currently visible (filtered). Equal to all tasks when not filtering. */
   tasks: KanbanTask[];
-  onTasksChange?: (tasks: KanbanTask[]) => void;
-  onAddTask?: (columnId: TaskStatus) => void;
-  onTaskOpen?: (task: KanbanTask) => void;
+  totalsByColumn: Record<string, number>;
+  filtering: boolean;
+  onTasksChange: (tasks: KanbanTask[]) => void;
+  onColumnsReorder: (fromIndex: number, toIndex: number) => void;
+  onAddColumn: (title: string) => void;
+  onAddTask: (columnId: string) => void;
+  onTaskOpen: (task: KanbanTask) => void;
+  onEditColumn: (column: BoardColumn) => void;
 };
 
 export function KanbanBoard({
   columns,
   tasks,
+  totalsByColumn,
+  filtering,
   onTasksChange,
+  onColumnsReorder,
+  onAddColumn,
   onAddTask,
   onTaskOpen,
+  onEditColumn,
 }: KanbanBoardProps) {
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 6,
-      },
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const isMobile = useIsMobile();
+  const [activeTask, setActiveTask] = React.useState<KanbanTask | null>(null);
+
+  // Cards re-develop once after landing in a new column. Cleared on a timer
+  // so the animation can't re-fire on unrelated re-renders.
+  const [lastMovedTaskId, setLastMovedTaskId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!lastMovedTaskId) return;
+    const timer = window.setTimeout(() => setLastMovedTaskId(null), 400);
+    return () => window.clearTimeout(timer);
+  }, [lastMovedTaskId]);
 
   const tasksByColumn = React.useMemo(() => {
-    const initialMap = new Map<string, KanbanTask[]>();
-
-    columns.forEach((column) => {
-      initialMap.set(column.id, []);
-    });
-
+    const map = new Map<string, KanbanTask[]>();
+    columns.forEach((column) => map.set(column.id, []));
     tasks.forEach((task) => {
-      const existing = initialMap.get(task.columnId) ?? [];
-      initialMap.set(task.columnId, [...existing, task]);
+      map.get(task.columnId)?.push(task);
     });
-
-    for (const [columnId, columnTasks] of initialMap) {
-      columnTasks.sort((a, b) => a.order - b.order);
-      initialMap.set(columnId, columnTasks);
+    for (const list of map.values()) {
+      list.sort((a, b) => a.order - b.order);
     }
-
-    return initialMap;
+    return map;
   }, [columns, tasks]);
 
-  const totalTasks = tasks.length;
+  const handleDragStart = React.useCallback(
+    (event: DragStartEvent) => {
+      const data = event.active.data.current as DragData | undefined;
+      if (data?.type === "task") {
+        setActiveTask(tasks.find((task) => task.id === String(event.active.id)) ?? null);
+      }
+    },
+    [tasks]
+  );
 
   const handleDragEnd = React.useCallback(
     (event: DragEndEvent) => {
-      const { active, over } = event;
+      setActiveTask(null);
 
-      if (!over || !active) return;
-      if (!onTasksChange) return;
+      const { active, over } = event;
+      if (!over) return;
+
+      const activeData = active.data.current as DragData | undefined;
+      const overData = over.data.current as DragData | undefined;
+      if (!activeData) return;
+
+      if (activeData.type === "column") {
+        const targetColumnId = overData?.columnId;
+        if (!targetColumnId || !activeData.columnId) return;
+
+        const fromIndex = columns.findIndex((column) => column.id === activeData.columnId);
+        const toIndex = columns.findIndex((column) => column.id === targetColumnId);
+        if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return;
+
+        onColumnsReorder(fromIndex, toIndex);
+        return;
+      }
+
+      if (activeData.type !== "task" || !activeData.columnId) return;
 
       const activeId = String(active.id);
-      const activeData = active.data.current as { type: "task"; columnId?: string } | undefined;
-      const sourceColumnId = activeData?.columnId;
-
-      if (!sourceColumnId) return;
-
-      const overData = over.data.current as
-        | { type: "task" | "column"; columnId?: string }
-        | undefined;
-
       const overId = String(over.id);
+      const sourceColumnId = activeData.columnId;
+      const targetColumnId = overData?.columnId;
+      if (!targetColumnId) return;
 
-      const potentialTarget =
-        overData?.columnId ?? (columns.some((column) => column.id === overId) ? overId : undefined);
-
-      if (!potentialTarget) return;
-
-      const targetColumnId = potentialTarget as TaskStatus;
-
-      const columnMap = new Map<string, KanbanTask[]>();
-      const columnIds = new Set<string>();
-
-      for (const column of columns) {
-        columnIds.add(column.id);
-        columnMap.set(
-          column.id,
-          [...(tasksByColumn.get(column.id) ?? [])] // clone
-        );
-      }
-
-      if (!columnMap.has(sourceColumnId)) {
-        columnMap.set(sourceColumnId, [...(tasksByColumn.get(sourceColumnId) ?? [])]);
-        columnIds.add(sourceColumnId);
-      }
-
-      if (!columnMap.has(targetColumnId)) {
-        columnMap.set(targetColumnId, [...(tasksByColumn.get(targetColumnId) ?? [])]);
-        columnIds.add(targetColumnId);
-      }
-
-      const sourceList = columnMap.get(sourceColumnId) ?? [];
-      const targetList = columnMap.get(targetColumnId) ?? [];
-
+      const sourceList = [...(tasksByColumn.get(sourceColumnId) ?? [])];
       const activeIndex = sourceList.findIndex((task) => task.id === activeId);
       if (activeIndex < 0) return;
 
-      const activeTask = sourceList[activeIndex];
+      const timestamp = new Date().toISOString();
+      const nextByColumn = new Map<string, KanbanTask[]>();
+      columns.forEach((column) => {
+        nextByColumn.set(column.id, [...(tasksByColumn.get(column.id) ?? [])]);
+      });
 
       if (sourceColumnId === targetColumnId) {
         const overIndex =
           overData?.type === "task"
             ? sourceList.findIndex((task) => task.id === overId)
             : sourceList.length - 1;
-
         if (overIndex < 0 || overIndex === activeIndex) return;
 
-        const reordered = arrayMove(sourceList, activeIndex, overIndex).map((task, index) => ({
-          ...task,
-          order: index,
-          updatedAt: task.id === activeTask.id ? new Date().toISOString() : task.updatedAt,
-        }));
-
-        columnMap.set(sourceColumnId, reordered);
+        nextByColumn.set(
+          sourceColumnId,
+          arrayMove(sourceList, activeIndex, overIndex).map((task) =>
+            task.id === activeId ? { ...task, updatedAt: timestamp } : task
+          )
+        );
       } else {
-        const [removed] = sourceList.splice(activeIndex, 1);
-        if (!removed) return;
+        const targetList = [...(nextByColumn.get(targetColumnId) ?? [])];
+        const [moved] = sourceList.splice(activeIndex, 1);
+        if (!moved) return;
+
+        const movedTask: KanbanTask = {
+          ...moved,
+          columnId: targetColumnId,
+          updatedAt: timestamp,
+        };
 
         const destinationIndex =
           overData?.type === "task"
             ? targetList.findIndex((task) => task.id === overId)
             : targetList.length;
 
-        const updatedTask: KanbanTask = {
-          ...removed,
-          columnId: targetColumnId,
-          status: targetColumnId,
-          updatedAt: new Date().toISOString(),
-        };
-
         if (destinationIndex < 0 || destinationIndex >= targetList.length) {
-          targetList.push(updatedTask);
+          targetList.push(movedTask);
         } else {
-          targetList.splice(destinationIndex, 0, updatedTask);
+          targetList.splice(destinationIndex, 0, movedTask);
         }
 
-        columnMap.set(
-          sourceColumnId,
-          sourceList.map((task, index) => ({
-            ...task,
-            order: index,
-            updatedAt: task.id === removed.id ? new Date().toISOString() : task.updatedAt,
-          }))
-        );
-
-        columnMap.set(
-          targetColumnId,
-          targetList.map((task, index) => ({
-            ...task,
-            columnId: targetColumnId,
-            status: targetColumnId,
-            order: index,
-            updatedAt: task.id === updatedTask.id ? updatedTask.updatedAt : task.updatedAt,
-          }))
-        );
+        nextByColumn.set(sourceColumnId, sourceList);
+        nextByColumn.set(targetColumnId, targetList);
+        setLastMovedTaskId(activeId);
       }
 
       const nextTasks: KanbanTask[] = [];
-
       for (const column of columns) {
-        const list = columnMap.get(column.id);
-        if (!list) continue;
-        nextTasks.push(...list);
-      }
-
-      for (const columnId of columnIds) {
-        if (columns.some((column) => column.id === columnId)) continue;
-        const list = columnMap.get(columnId);
-        if (!list) continue;
-        nextTasks.push(...list);
+        const list = nextByColumn.get(column.id) ?? [];
+        list.forEach((task, index) => {
+          nextTasks.push({ ...task, columnId: column.id, order: index });
+        });
       }
 
       onTasksChange(nextTasks);
     },
-    [columns, onTasksChange, tasksByColumn]
+    [columns, onColumnsReorder, onTasksChange, tasksByColumn]
   );
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-      <div
-        className={cn(
-          "grid gap-4",
-          isMobile ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3"
-        )}
-      >
-        {columns.map((column) => {
-          const columnTasks = tasksByColumn.get(column.id) ?? [];
-
-          return (
-            <SortableContext
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCorners}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveTask(null)}
+    >
+      <div className="flex items-start gap-6 pb-4">
+        <SortableContext
+          items={columns.map((column) => `column:${column.id}`)}
+          strategy={horizontalListSortingStrategy}
+        >
+          {columns.map((column) => (
+            <KanbanColumn
               key={column.id}
-              id={column.id}
-              items={columnTasks.map((task) => task.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <KanbanColumn
-                column={column}
-                count={columnTasks.length}
-                onAddTask={onAddTask ? () => onAddTask(column.id) : undefined}
-              >
-                {columnTasks.map((task) => (
-                  <KanbanTaskCard key={task.id} task={task} onSelect={onTaskOpen} />
-                ))}
-              </KanbanColumn>
-            </SortableContext>
-          );
-        })}
+              column={column}
+              tasks={tasksByColumn.get(column.id) ?? []}
+              totalCount={totalsByColumn[column.id] ?? 0}
+              filtering={filtering}
+              dragDisabled={filtering}
+              lastMovedTaskId={lastMovedTaskId}
+              onAddTask={onAddTask}
+              onTaskOpen={onTaskOpen}
+              onEditColumn={onEditColumn}
+            />
+          ))}
+        </SortableContext>
+
+        <AddColumnRail onAdd={onAddColumn} />
       </div>
-      <p className="sr-only">Total tasks: {totalTasks}</p>
+
+      <DragOverlay>{activeTask ? <TaskCardGhost task={activeTask} /> : null}</DragOverlay>
     </DndContext>
+  );
+}
+
+function AddColumnRail({ onAdd }: { onAdd: (title: string) => void }) {
+  const [editing, setEditing] = React.useState(false);
+  const [title, setTitle] = React.useState("");
+
+  const submit = () => {
+    const trimmed = title.trim();
+    if (trimmed) {
+      onAdd(trimmed);
+    }
+    setTitle("");
+    setEditing(false);
+  };
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className="flex w-[220px] shrink-0 items-center gap-1.5 rounded-md px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        Add column
+      </button>
+    );
+  }
+
+  return (
+    <form
+      className="flex w-[260px] shrink-0 flex-col gap-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        submit();
+      }}
+    >
+      <Input
+        autoFocus
+        value={title}
+        placeholder="Column name"
+        onChange={(event) => setTitle(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            setTitle("");
+            setEditing(false);
+          }
+        }}
+      />
+      <div className="flex items-center gap-2">
+        <Button type="submit" size="sm" variant="brand" disabled={!title.trim()}>
+          Add column
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            setTitle("");
+            setEditing(false);
+          }}
+        >
+          <X className="h-3.5 w-3.5" aria-hidden="true" />
+          Cancel
+        </Button>
+      </div>
+    </form>
   );
 }

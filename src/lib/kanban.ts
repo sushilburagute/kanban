@@ -1,4 +1,4 @@
-import type { KanbanTask, TaskStatus } from "@/types/Tasks";
+import type { BoardColumn, KanbanTask, TaskPriority } from "@/types/kanban";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
@@ -6,15 +6,28 @@ const daysFromNow = (offset: number) => new Date(Date.now() + offset * DAY_IN_MS
 
 const daysAgo = (offset: number) => new Date(Date.now() - offset * DAY_IN_MS).toISOString();
 
+export const PRIORITIES: TaskPriority[] = ["low", "medium", "high"];
+
+/**
+ * Ids match the legacy hardcoded TaskStatus values so tasks stored by older
+ * versions of the app keep pointing at valid columns.
+ */
+export function createDefaultColumns(): BoardColumn[] {
+  return [
+    { id: "Todo", title: "To do", countsAsDone: false },
+    { id: "InProgress", title: "In progress", countsAsDone: false },
+    { id: "Done", title: "Done", countsAsDone: true },
+  ];
+}
+
 export function createSeedTasks(): KanbanTask[] {
   return [
     {
       id: "task-tour-overview",
       columnId: "Todo",
-      status: "Todo",
-      title: "Review the quick tour",
+      title: "Take the quick tour",
       description:
-        "Open this card to see the modal, explore the fields, and learn where to update or delete tasks.",
+        "Open this card to see the editor, explore the fields, and learn where to update or delete tasks.",
       labels: ["Guide"],
       order: 0,
       priority: "high",
@@ -25,10 +38,9 @@ export function createSeedTasks(): KanbanTask[] {
     {
       id: "task-create-first",
       columnId: "Todo",
-      status: "Todo",
       title: "Create your first task",
       description:
-        "Click Add task in the header, fill in the fields, and save. Your new task will appear in To Do.",
+        "Click Add task in the header, fill in the fields, and save. Your new task lands in the first column.",
       labels: ["Guide"],
       order: 1,
       priority: "medium",
@@ -39,10 +51,9 @@ export function createSeedTasks(): KanbanTask[] {
     {
       id: "task-drag-demo",
       columnId: "InProgress",
-      status: "InProgress",
       title: "Drag this card",
       description:
-        "Press and hold the grip icon on the right, then drag to a different column to reorder or change status.",
+        "Grab the card and drag it to another column, or focus it and press Enter to open the editor. Columns can be reordered by their headers, too.",
       labels: ["Guide"],
       order: 0,
       priority: "low",
@@ -51,12 +62,11 @@ export function createSeedTasks(): KanbanTask[] {
       updatedAt: daysAgo(0),
     },
     {
-      id: "task-edit-demo",
+      id: "task-columns-demo",
       columnId: "InProgress",
-      status: "InProgress",
-      title: "Edit this card",
+      title: "Make the board yours",
       description:
-        "Click the card body to open the modal, adjust fields such as priority or labels, and save your changes.",
+        "Rename this board from its title, add a column with the + at the end of the lanes, and rename columns from their header menu.",
       labels: ["Guide"],
       order: 1,
       priority: "medium",
@@ -67,10 +77,9 @@ export function createSeedTasks(): KanbanTask[] {
     {
       id: "task-persistence-check",
       columnId: "Done",
-      status: "Done",
-      title: "Confirm data persistence",
+      title: "Confirm your data stays put",
       description:
-        "Refresh the page. Tasks you created or moved should reload exactly where you left them thanks to IndexedDB.",
+        "Refresh the page. Everything reloads exactly where you left it — boards live in your browser, not on a server. Back them up anytime from Settings.",
       labels: ["Guide"],
       order: 0,
       priority: "high",
@@ -81,10 +90,9 @@ export function createSeedTasks(): KanbanTask[] {
     {
       id: "task-cleanup",
       columnId: "Done",
-      status: "Done",
-      title: "Tailor the board",
+      title: "Clear the tutorial",
       description:
-        "Delete this tutorial card once you are comfortable. Feel free to replace it with your own work items.",
+        "Delete these guide cards once you're comfortable and replace them with your own work.",
       labels: ["Guide"],
       order: 1,
       priority: "low",
@@ -96,13 +104,12 @@ export function createSeedTasks(): KanbanTask[] {
 }
 
 export function normalizeTaskOrder(tasks: KanbanTask[]): KanbanTask[] {
-  const byColumn = new Map<TaskStatus, KanbanTask[]>();
+  const byColumn = new Map<string, KanbanTask[]>();
 
   tasks.forEach((task) => {
-    const columnId = task.columnId as TaskStatus;
-    const bucket = byColumn.get(columnId) ?? [];
+    const bucket = byColumn.get(task.columnId) ?? [];
     bucket.push(task);
-    byColumn.set(columnId, bucket);
+    byColumn.set(task.columnId, bucket);
   });
 
   const updated = new Map<string, KanbanTask>();
@@ -116,12 +123,7 @@ export function normalizeTaskOrder(tasks: KanbanTask[]): KanbanTask[] {
         return a.order - b.order;
       })
       .forEach((task, index) => {
-        updated.set(task.id, {
-          ...task,
-          columnId,
-          status: columnId,
-          order: index,
-        });
+        updated.set(task.id, { ...task, columnId, order: index });
       });
   }
 
@@ -153,16 +155,21 @@ export function formatLabelsForInput(labels: string[]) {
   return labels.join(", ");
 }
 
-export function generateTaskId() {
+function randomId(prefix: string) {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
-  return `task-${Math.random().toString(16).slice(2)}`;
+  return `${prefix}-${Math.random().toString(16).slice(2)}`;
+}
+
+export function generateTaskId() {
+  return randomId("task");
 }
 
 export function generateBoardId() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  return `board-${Math.random().toString(16).slice(2)}`;
+  return randomId("board");
+}
+
+export function generateColumnId() {
+  return randomId("column");
 }
