@@ -14,12 +14,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import type { TaskPriority, TaskStatus } from "@/types/Tasks";
+import { PRIORITY_DOT, PRIORITY_LABEL, PRIORITY_ORDER_ASC } from "@/lib/priority";
+import { TOGGLE_OFF, TOGGLE_ON } from "@/lib/styles";
+import { cn } from "@/lib/utils";
+import type { BoardColumn, TaskPriority } from "@/types/kanban";
 
 export type TaskDialogFormValues = {
   title: string;
   description: string;
-  columnId: TaskStatus;
+  columnId: string;
   priority: TaskPriority;
   dueDate: string;
   labels: string;
@@ -28,10 +31,7 @@ export type TaskDialogFormValues = {
 type TaskDialogProps = {
   open: boolean;
   mode: "create" | "edit";
-  columns: Array<{
-    id: TaskStatus;
-    title: string;
-  }>;
+  columns: BoardColumn[];
   initialValues: TaskDialogFormValues;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: TaskDialogFormValues) => void;
@@ -47,36 +47,26 @@ export function TaskDialog({
   onSubmit,
   onDelete,
 }: TaskDialogProps) {
-  const [formValues, setFormValues] =
-    React.useState<TaskDialogFormValues>(initialValues);
+  const [formValues, setFormValues] = React.useState<TaskDialogFormValues>(initialValues);
 
-  React.useEffect(() => {
+  // Re-seed the form when the dialog is opened for a different task.
+  const [prevInitialValues, setPrevInitialValues] = React.useState(initialValues);
+  if (prevInitialValues !== initialValues) {
+    setPrevInitialValues(initialValues);
     setFormValues(initialValues);
-  }, [initialValues]);
+  }
 
   const handleChange = <Field extends keyof TaskDialogFormValues>(
     field: Field,
     value: TaskDialogFormValues[Field]
   ) => {
-    setFormValues((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setFormValues((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = React.useCallback(
-    (event: React.FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      onSubmit(formValues);
-    },
-    [formValues, onSubmit]
-  );
-
-  const dialogTitle = mode === "create" ? "Add task" : "Edit task";
-  const dialogDescription =
-    mode === "create"
-      ? "Input just enough detail so the team can pick it up quickly."
-      : "Update the task details and reassign status or priority.";
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    onSubmit(formValues);
+  };
 
   const isValid = formValues.title.trim().length > 0;
 
@@ -84,24 +74,22 @@ export function TaskDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{dialogTitle}</DialogTitle>
-          <DialogDescription>{dialogDescription}</DialogDescription>
+          <DialogTitle>{mode === "create" ? "Add card" : "Edit card"}</DialogTitle>
+          <DialogDescription>
+            {mode === "create"
+              ? "Just enough detail to pick it up later."
+              : "Update the details, or move it to another column."}
+          </DialogDescription>
         </DialogHeader>
 
-        <form
-          className="space-y-4"
-          onSubmit={handleSubmit}
-          id="task-dialog-form"
-        >
+        <form className="space-y-4" onSubmit={handleSubmit} id="task-dialog-form">
           <div className="space-y-2">
             <Label htmlFor="task-title">Title</Label>
             <Input
               id="task-title"
               placeholder="Summarize the work item"
               value={formValues.title}
-              onChange={(event) =>
-                handleChange("title", event.target.value)
-              }
+              onChange={(event) => handleChange("title", event.target.value)}
               required
             />
           </div>
@@ -110,28 +98,51 @@ export function TaskDialog({
             <Label htmlFor="task-description">Description</Label>
             <Textarea
               id="task-description"
-              placeholder="Outline the objective, context, or next steps."
+              placeholder="Objective, context, or next steps."
               value={formValues.description}
-              onChange={(event) =>
-                handleChange("description", event.target.value)
-              }
-              rows={4}
+              onChange={(event) => handleChange("description", event.target.value)}
+              rows={3}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Priority</Label>
+            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Priority">
+              {PRIORITY_ORDER_ASC.map((priority) => {
+                const selected = formValues.priority === priority;
+                return (
+                  <button
+                    key={priority}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => handleChange("priority", priority)}
+                    className={cn(
+                      "flex h-9 items-center justify-center gap-1.5 rounded-md border text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      selected ? TOGGLE_ON : TOGGLE_OFF
+                    )}
+                  >
+                    <span aria-hidden className={cn("text-[9px]", PRIORITY_DOT[priority])}>
+                      ●
+                    </span>
+                    {PRIORITY_LABEL[priority]}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="task-status">Status</Label>
+              <Label htmlFor="task-column">Column</Label>
               <select
-                id="task-status"
+                id="task-column"
                 value={formValues.columnId}
-                onChange={(event) =>
-                  handleChange("columnId", event.target.value as TaskStatus)
-                }
-                className="flex h-9 w-full rounded-md border border-input bg-background text-foreground px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                onChange={(event) => handleChange("columnId", event.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {columns.map((column) => (
-                  <option key={column.id} value={column.id} className="bg-background text-foreground">
+                  <option key={column.id} value={column.id} className="bg-card text-foreground">
                     {column.title}
                   </option>
                 ))}
@@ -139,84 +150,49 @@ export function TaskDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="task-priority">Priority</Label>
-              <select
-                id="task-priority"
-                value={formValues.priority}
-                onChange={(event) =>
-                  handleChange("priority", event.target.value as TaskPriority)
-                }
-                className="flex h-9 w-full rounded-md border border-input bg-background text-foreground px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="low" className="bg-background text-foreground">
-                  Low
-                </option>
-                <option value="medium" className="bg-background text-foreground">
-                  Medium
-                </option>
-                <option value="high" className="bg-background text-foreground">
-                  High
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
               <Label htmlFor="task-due-date">Due date</Label>
               <Input
                 id="task-due-date"
                 type="date"
                 value={formValues.dueDate}
-                onChange={(event) =>
-                  handleChange("dueDate", event.target.value)
-                }
+                onChange={(event) => handleChange("dueDate", event.target.value)}
               />
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="task-labels">Labels</Label>
-              <Input
-                id="task-labels"
-                placeholder="Design, Research"
-                value={formValues.labels}
-                onChange={(event) =>
-                  handleChange("labels", event.target.value)
-                }
-              />
-              <p className="text-xs text-muted-foreground">
-                Separate multiple labels with commas.
-              </p>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="task-labels">Labels</Label>
+            <Input
+              id="task-labels"
+              placeholder="Design, Research"
+              value={formValues.labels}
+              onChange={(event) => handleChange("labels", event.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">Separate multiple labels with commas.</p>
           </div>
         </form>
 
-        <DialogFooter className="gap-3">
-          <div className="flex flex-1 items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="flex-1 sm:flex-none"
-            >
-              Cancel
-            </Button>
-
+        <DialogFooter className="gap-3 sm:justify-between">
+          <div>
             {mode === "edit" && onDelete ? (
               <Button
                 type="button"
-                variant="destructive"
+                variant="destructiveOutline"
                 onClick={onDelete}
-                className="flex-1 sm:flex-none"
               >
-                Delete
+                Delete card
               </Button>
             ) : null}
           </div>
 
-          <Button type="submit" form="task-dialog-form" disabled={!isValid}>
-            {mode === "create" ? "Create task" : "Save changes"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="task-dialog-form" variant="brand" disabled={!isValid}>
+              {mode === "create" ? "Add card" : "Save changes"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

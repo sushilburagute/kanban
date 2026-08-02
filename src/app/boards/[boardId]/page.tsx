@@ -2,208 +2,164 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { PlusCircle, SquareKanban } from "lucide-react";
+import { Pencil, Plus, SquareKanban } from "lucide-react";
 
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
-import { KanbanBoardSkeleton, KanbanStatsSkeleton } from "@/components/kanban/KanbanSkeleton";
-import { useBoards } from "@/components/contexts/BoardsProvider";
+import { BoardHeaderSkeleton, KanbanBoardSkeleton } from "@/components/kanban/KanbanSkeleton";
 import { TaskDialog, type TaskDialogFormValues } from "@/components/kanban/TaskDialog";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { KANBAN_COLUMNS, DEFAULT_COLUMN_ID, DEFAULT_BOARD_ID } from "@/data/kanban";
-import { usePersistentKanbanTasks } from "@/hooks/use-persistent-kanban-tasks";
+import { ColumnDialog } from "@/components/kanban/ColumnDialog";
 import {
-  createSeedTasks,
+  EMPTY_FILTER,
+  FilterBar,
+  isFilterActive,
+  taskMatchesFilter,
+  type BoardFilter,
+} from "@/components/kanban/FilterBar";
+import { CreateBoardDialog } from "@/components/boards/BoardDialogs";
+import { Button } from "@/components/ui/button";
+import { useBoardTasks, useWorkspaceHydration } from "@/hooks/use-workspace";
+import { useWorkspaceStore } from "@/store/workspace";
+import {
   formatLabelsForInput,
   fromDateInputValue,
-  generateTaskId,
   parseLabels,
   toDateInputValue,
 } from "@/lib/kanban";
-import type { KanbanTask, TaskStatus } from "@/types/Tasks";
-import { CreateBoardDialog } from "@/components/ui/boardsSidebarSection";
-import { trackEvent } from "@/lib/analytics";
+import { cn } from "@/lib/utils";
+import type { BoardColumn, KanbanBoard as Board, KanbanTask } from "@/types/kanban";
 
 type TaskEditorState =
   | { mode: "closed" }
-  | { mode: "create"; columnId: TaskStatus }
+  | { mode: "create"; columnId: string }
   | { mode: "edit"; taskId: string };
 
 type BoardPageParams = { boardId?: string };
 
-type BoardPageProps = {
-  params?: Promise<BoardPageParams>;
-};
-
-export default function BoardPage({ params }: BoardPageProps) {
+export default function BoardPage({ params }: { params?: Promise<BoardPageParams> }) {
   const router = useRouter();
-  const { boards, isLoading: boardsLoading, addBoard } = useBoards();
+  const hydrated = useWorkspaceHydration();
+  const boards = useWorkspaceStore((state) => state.boards);
 
   const paramsPromise = React.useMemo(
     () => params ?? Promise.resolve<BoardPageParams>({}),
     [params]
   );
-
   const resolvedParams = React.use(paramsPromise);
-  const requestedBoardId = resolvedParams?.boardId ?? DEFAULT_BOARD_ID;
+  const requestedBoardId = resolvedParams?.boardId;
 
-  const activeBoard = React.useMemo(
-    () => boards.find((board) => board.id === requestedBoardId),
-    [boards, requestedBoardId]
-  );
-
-  const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
-  const [newBoardName, setNewBoardName] = React.useState("");
-  const [isCreatingBoard, setIsCreatingBoard] = React.useState(false);
-  const [createWithSeedData, setCreateWithSeedData] = React.useState(false);
-
-  const handleCreateBoardSubmit = React.useCallback(
-    async (event: React.FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      if (isCreatingBoard) return;
-
-      const name = newBoardName.trim();
-
-      setIsCreatingBoard(true);
-      try {
-        const board = await addBoard(name, { withSeedData: createWithSeedData });
-        setCreateDialogOpen(false);
-        setNewBoardName("");
-        setCreateWithSeedData(false);
-        router.push(`/boards/${board.id}`);
-      } finally {
-        setIsCreatingBoard(false);
-      }
-    },
-    [addBoard, createWithSeedData, isCreatingBoard, newBoardName, router]
-  );
-
-  const handleCreateDialogOpenChange = React.useCallback((open: boolean) => {
-    setCreateDialogOpen(open);
-    if (!open) {
-      setNewBoardName("");
-      setCreateWithSeedData(false);
-    }
-  }, []);
-
-  const handleCreateDialogCancel = React.useCallback(() => {
-    setCreateDialogOpen(false);
-    setNewBoardName("");
-    setCreateWithSeedData(false);
-  }, []);
+  const activeBoard = boards.find((board) => board.id === requestedBoardId);
 
   React.useEffect(() => {
-    if (boardsLoading) return;
-
-    if (!activeBoard) {
-      if (boards.length > 0) {
-        router.replace(`/boards/${boards[0].id}`);
-      }
+    if (!hydrated || activeBoard) return;
+    if (boards.length > 0) {
+      router.replace(`/boards/${boards[0].id}`);
     }
-  }, [boardsLoading, activeBoard, boards, router]);
+  }, [hydrated, activeBoard, boards, router]);
 
-  if (boardsLoading) {
+  if (!hydrated) {
     return (
-      <main className="min-h-screen bg-background w-full">
-        <div className="mx-auto flex w-full max-w flex-col gap-6 px-4 py-10 sm:px-6 lg:px-10">
-          <KanbanBoardSkeleton columns={KANBAN_COLUMNS.length} />
-        </div>
-      </main>
+      <BoardShell>
+        <BoardHeaderSkeleton />
+        <KanbanBoardSkeleton />
+      </BoardShell>
     );
   }
 
   if (!activeBoard) {
     if (boards.length === 0) {
-      return (
-        <>
-          <main className="min-h-screen bg-background w-full">
-            <div className="mx-auto my-auto flex w-full max-w h-full flex-1 flex-col items-center justify-center px-4 py-24 sm:px-6 lg:px-10">
-              <div className="flex max-w-md flex-col items-center gap-5 text-center">
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                  <SquareKanban className="h-6 w-6" />
-                </span>
-                <div className="space-y-2">
-                  <h1 className="text-2xl font-semibold text-foreground">No boards yet</h1>
-                  <p className="text-sm text-muted-foreground">
-                    Create your first board to start organizing tasks and tracking progress.
-                  </p>
-                </div>
-                <Button size="lg" onClick={() => setCreateDialogOpen(true)}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Create board
-                </Button>
-              </div>
-            </div>
-          </main>
-
-          <CreateBoardDialog
-            open={createDialogOpen}
-            onOpenChange={handleCreateDialogOpenChange}
-            onSubmit={handleCreateBoardSubmit}
-            isCreating={isCreatingBoard}
-            name={newBoardName}
-            onNameChange={(event) => setNewBoardName(event.target.value)}
-            onCancel={handleCreateDialogCancel}
-            withSeedData={createWithSeedData}
-            onSeedToggle={(value) => setCreateWithSeedData(value)}
-          />
-        </>
-      );
+      return <EmptyWorkspace />;
     }
-
     return (
-      <main className="min-h-screen bg-background w-full">
-        <div className="mx-auto flex w-full max-w flex-col gap-6 px-4 py-10 sm:px-6 lg:px-10">
-          <KanbanBoardSkeleton columns={KANBAN_COLUMNS.length} />
-        </div>
-      </main>
+      <BoardShell>
+        <BoardHeaderSkeleton />
+        <KanbanBoardSkeleton />
+      </BoardShell>
     );
   }
 
-  return <BoardContent boardId={activeBoard.id} boardName={activeBoard.name} />;
+  return <BoardView key={activeBoard.id} board={activeBoard} />;
 }
 
-function BoardContent({ boardId, boardName }: { boardId: string; boardName: string }) {
-  const seedTasksFactory = React.useCallback(
-    () => (boardId === DEFAULT_BOARD_ID ? createSeedTasks() : []),
-    [boardId]
+function BoardShell({ children }: { children: React.ReactNode }) {
+  return (
+    // min-w-0 is load-bearing: as a flex item beside the sidebar this defaults
+    // to min-width:auto, so the board's columns set a min-content floor that
+    // stops it shrinking and pushes the whole document into horizontal scroll.
+    // Letting it shrink hands scrolling back to the overflow-x-auto rail below.
+    <main className="flex min-h-screen min-w-0 flex-1 flex-col bg-background">
+      <div className="flex min-w-0 flex-1 flex-col gap-6 px-4 pb-4 pt-8 sm:px-6 lg:px-8">
+        {children}
+      </div>
+    </main>
   );
-  const {
-    tasks,
-    isLoading: tasksLoading,
-    replaceTasks,
-    updateTasks,
-  } = usePersistentKanbanTasks(seedTasksFactory, boardId);
+}
 
-  const isReady = !tasksLoading;
-  const [taskEditor, setTaskEditor] = React.useState<TaskEditorState>({
-    mode: "closed",
-  });
+function EmptyWorkspace() {
+  const [createOpen, setCreateOpen] = React.useState(false);
 
-  const readyTasks = React.useMemo(() => tasks, [tasks]);
+  return (
+    <main className="flex min-h-screen w-full items-center justify-center bg-background px-4">
+      <div className="flex max-w-md flex-col items-center gap-5 text-center">
+        <span className="flex h-12 w-12 items-center justify-center rounded-md bg-brand text-brand-foreground">
+          <SquareKanban className="h-6 w-6" />
+        </span>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">No boards yet</h1>
+          <p className="text-sm text-muted-foreground">
+            A board is a signboard for one stream of work. Create your first one — it stays in
+            this browser, nowhere else.
+          </p>
+        </div>
+        <Button size="lg" variant="brand" onClick={() => setCreateOpen(true)}>
+          <Plus className="mr-1 h-4 w-4" />
+          Create board
+        </Button>
+      </div>
 
-  const stats = React.useMemo(() => {
-    return KANBAN_COLUMNS.reduce<Record<TaskStatus, number>>((acc, column) => {
-      acc[column.id] = readyTasks.filter((task) => task.columnId === column.id).length;
-      return acc;
-    }, {} as Record<TaskStatus, number>);
-  }, [readyTasks]);
+      <CreateBoardDialog open={createOpen} onOpenChange={setCreateOpen} />
+    </main>
+  );
+}
 
-  const handleAddTaskRequest = React.useCallback(
-    (columnId: TaskStatus) => {
-      if (!isReady) return;
-      setTaskEditor({ mode: "create", columnId });
-    },
-    [isReady]
+function BoardView({ board }: { board: Board }) {
+  const { tasks, ready } = useBoardTasks(board.id);
+  const setBoardTasks = useWorkspaceStore((state) => state.setBoardTasks);
+  const reorderColumns = useWorkspaceStore((state) => state.reorderColumns);
+  const addColumn = useWorkspaceStore((state) => state.addColumn);
+  const createTask = useWorkspaceStore((state) => state.createTask);
+  const updateTask = useWorkspaceStore((state) => state.updateTask);
+  const deleteTask = useWorkspaceStore((state) => state.deleteTask);
+
+  const [taskEditor, setTaskEditor] = React.useState<TaskEditorState>({ mode: "closed" });
+  const [editingColumn, setEditingColumn] = React.useState<BoardColumn | null>(null);
+  const [filter, setFilter] = React.useState<BoardFilter>(EMPTY_FILTER);
+
+  const filtering = isFilterActive(filter);
+  const visibleTasks = React.useMemo(
+    () => (filtering ? tasks.filter((task) => taskMatchesFilter(task, filter)) : tasks),
+    [tasks, filter, filtering]
   );
 
-  const handleTaskOpen = React.useCallback(
-    (task: KanbanTask) => {
-      if (!isReady) return;
-      setTaskEditor({ mode: "edit", taskId: task.id });
-    },
-    [isReady]
-  );
+  const totalsByColumn = React.useMemo(() => {
+    const totals: Record<string, number> = {};
+    for (const task of tasks) {
+      totals[task.columnId] = (totals[task.columnId] ?? 0) + 1;
+    }
+    return totals;
+  }, [tasks]);
+
+  const allLabels = React.useMemo(() => {
+    const set = new Set<string>();
+    tasks.forEach((task) => task.labels.forEach((label) => set.add(label)));
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [tasks]);
+
+  const doneCount = React.useMemo(() => {
+    const doneColumns = new Set(
+      board.columns.filter((column) => column.countsAsDone).map((column) => column.id)
+    );
+    return tasks.filter((task) => doneColumns.has(task.columnId)).length;
+  }, [board.columns, tasks]);
 
   const dialogInitialValues = React.useMemo<TaskDialogFormValues>(() => {
     if (taskEditor.mode === "create") {
@@ -218,12 +174,12 @@ function BoardContent({ boardId, boardName }: { boardId: string; boardName: stri
     }
 
     if (taskEditor.mode === "edit") {
-      const task = readyTasks.find((item) => item.id === taskEditor.taskId);
+      const task = tasks.find((item) => item.id === taskEditor.taskId);
       if (task) {
         return {
           title: task.title,
           description: task.description ?? "",
-          columnId: task.columnId as TaskStatus,
+          columnId: task.columnId,
           priority: task.priority,
           dueDate: toDateInputValue(task.dueDate),
           labels: formatLabelsForInput(task.labels),
@@ -234,182 +190,171 @@ function BoardContent({ boardId, boardName }: { boardId: string; boardName: stri
     return {
       title: "",
       description: "",
-      columnId: DEFAULT_COLUMN_ID,
+      columnId: board.columns[0]?.id ?? "",
       priority: "medium",
       dueDate: "",
       labels: "",
     };
-  }, [taskEditor, readyTasks]);
-
-  const handleDialogOpenChange = React.useCallback((open: boolean) => {
-    if (!open) {
-      setTaskEditor({ mode: "closed" });
-    }
-  }, []);
+  }, [taskEditor, tasks, board.columns]);
 
   const handleTaskDialogSubmit = React.useCallback(
     (values: TaskDialogFormValues) => {
-      if (!isReady) {
-        return;
-      }
-
-      const normalizedTitle = values.title.trim();
-      const normalizedDescription = values.description.trim();
-      const labels = parseLabels(values.labels);
-      const dueDate = fromDateInputValue(values.dueDate);
-      const timestamp = new Date().toISOString();
+      const input = {
+        title: values.title.trim(),
+        description: values.description.trim() || undefined,
+        columnId: values.columnId,
+        priority: values.priority,
+        dueDate: fromDateInputValue(values.dueDate),
+        labels: parseLabels(values.labels),
+      };
 
       if (taskEditor.mode === "create") {
-        const newTaskId = generateTaskId();
-        updateTasks((previous) => {
-          const nextOrder = previous.filter((task) => task.columnId === values.columnId).length;
-
-          const newTask: KanbanTask = {
-            id: newTaskId,
-            columnId: values.columnId,
-            status: values.columnId,
-            title: normalizedTitle,
-            description: normalizedDescription ? normalizedDescription : undefined,
-            labels,
-            order: nextOrder,
-            priority: values.priority,
-            dueDate,
-            createdAt: timestamp,
-            updatedAt: timestamp,
-          };
-
-          return [...previous, newTask];
-        });
-        trackEvent("task_create", {
-          board_id: boardId,
-          task_id: newTaskId,
-          column_id: values.columnId,
-          has_due_date: Boolean(dueDate),
-          label_count: labels.length,
-          priority: values.priority,
-        });
+        createTask(board.id, input);
       } else if (taskEditor.mode === "edit") {
-        const taskId = taskEditor.taskId;
-
-        updateTasks((previous) =>
-          previous.map((task) => {
-            if (task.id !== taskId) {
-              return task;
-            }
-
-            return {
-              ...task,
-              title: normalizedTitle,
-              description: normalizedDescription ? normalizedDescription : undefined,
-              labels,
-              priority: values.priority,
-              dueDate,
-              columnId: values.columnId,
-              status: values.columnId,
-              updatedAt: timestamp,
-            };
-          })
-        );
-        trackEvent("task_update", {
-          board_id: boardId,
-          task_id: taskId,
-          column_id: values.columnId,
-          has_due_date: Boolean(dueDate),
-          label_count: labels.length,
-          priority: values.priority,
-        });
+        updateTask(board.id, taskEditor.taskId, input);
       }
 
       setTaskEditor({ mode: "closed" });
     },
-    [boardId, isReady, taskEditor, updateTasks]
+    [board.id, taskEditor, createTask, updateTask]
   );
 
   const handleTaskDelete = React.useCallback(() => {
-    if (!isReady || taskEditor.mode !== "edit") {
-      return;
-    }
-
-    const taskId = taskEditor.taskId;
-    const task = readyTasks.find((item) => item.id === taskId);
-    updateTasks((previous) => previous.filter((task) => task.id !== taskId));
+    if (taskEditor.mode !== "edit") return;
+    deleteTask(board.id, taskEditor.taskId);
     setTaskEditor({ mode: "closed" });
-    trackEvent("task_delete", {
-      board_id: boardId,
-      task_id: taskId,
-      column_id: task?.columnId,
-      had_due_date: Boolean(task?.dueDate),
-    });
-  }, [boardId, isReady, readyTasks, taskEditor, updateTasks]);
-
-  const dialogMode: "create" | "edit" = taskEditor.mode === "edit" ? "edit" : "create";
-  const isDialogOpen = taskEditor.mode !== "closed";
+  }, [board.id, taskEditor, deleteTask]);
 
   return (
-    <main className="min-h-screen bg-background w-full">
-      <div className="mx-auto flex w-full max-w flex-col gap-6 px-4 py-10 sm:px-6 lg:px-10">
-        <section className="space-y-4 rounded-2xl border border-border/70 bg-card/60 p-6 shadow-sm backdrop-blur">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
-              <h1 className="text-3xl font-semibold tracking-tight text-foreground">{boardName}</h1>
-              <p className="text-sm text-muted-foreground">
-                Stay aligned on priorities across design, product, and growth. Drag any card to
-                update its status.
-              </p>
-            </div>
-            <Button
-              size="lg"
-              className="self-start sm:self-auto"
-              onClick={() => handleAddTaskRequest(DEFAULT_COLUMN_ID)}
-              disabled={!isReady}
-            >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add task
-            </Button>
+    <BoardShell>
+      <header className="space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0 space-y-1.5">
+            <p className="eyebrow flex items-center gap-2 text-muted-foreground">
+              Board
+              <span className="font-mono normal-case tracking-normal">
+                · {tasks.length} {tasks.length === 1 ? "card" : "cards"} · {doneCount} done
+              </span>
+            </p>
+            <BoardTitle board={board} />
           </div>
 
-          <Separator />
+          <Button
+            variant="brand"
+            className="self-start sm:self-auto"
+            onClick={() =>
+              setTaskEditor({ mode: "create", columnId: board.columns[0]?.id ?? "" })
+            }
+            disabled={!ready || board.columns.length === 0}
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            Add card
+          </Button>
+        </div>
 
-          {isReady ? (
-            <dl className="grid gap-4 text-sm text-muted-foreground sm:grid-cols-3">
-              {KANBAN_COLUMNS.map((column) => (
-                <div key={column.id} className="rounded-xl border border-border/60 bg-muted/40 p-4">
-                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground/80">
-                    {column.title}
-                  </dt>
-                  <dd className="mt-1 text-2xl font-semibold text-foreground">
-                    {stats[column.id] ?? 0}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          ) : (
-            <KanbanStatsSkeleton count={KANBAN_COLUMNS.length} />
-          )}
-        </section>
+        <FilterBar filter={filter} onChange={setFilter} labels={allLabels} />
 
-        {isReady ? (
+        {filtering ? (
+          <p className="font-mono text-xs text-muted-foreground">
+            Showing {visibleTasks.length} of {tasks.length} cards — drag is off while filtering.
+          </p>
+        ) : null}
+      </header>
+
+      <div className="-mx-4 flex-1 overflow-x-auto px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        {ready ? (
           <KanbanBoard
-            columns={KANBAN_COLUMNS}
-            tasks={readyTasks}
-            onTasksChange={replaceTasks}
-            onAddTask={handleAddTaskRequest}
-            onTaskOpen={handleTaskOpen}
+            columns={board.columns}
+            tasks={visibleTasks}
+            totalsByColumn={totalsByColumn}
+            filtering={filtering}
+            onTasksChange={(next) => setBoardTasks(board.id, next)}
+            onColumnsReorder={(from, to) => reorderColumns(board.id, from, to)}
+            onAddColumn={(title) => addColumn(board.id, title)}
+            onAddTask={(columnId) => setTaskEditor({ mode: "create", columnId })}
+            onTaskOpen={(task: KanbanTask) => setTaskEditor({ mode: "edit", taskId: task.id })}
+            onEditColumn={setEditingColumn}
           />
         ) : (
-          <KanbanBoardSkeleton columns={KANBAN_COLUMNS.length} />
+          <KanbanBoardSkeleton columns={board.columns.length} />
         )}
       </div>
 
       <TaskDialog
-        open={isDialogOpen}
-        mode={dialogMode}
-        columns={KANBAN_COLUMNS.map(({ id, title }) => ({ id, title }))}
+        open={taskEditor.mode !== "closed"}
+        mode={taskEditor.mode === "edit" ? "edit" : "create"}
+        columns={board.columns}
         initialValues={dialogInitialValues}
-        onOpenChange={handleDialogOpenChange}
+        onOpenChange={(open) => !open && setTaskEditor({ mode: "closed" })}
         onSubmit={handleTaskDialogSubmit}
-        onDelete={dialogMode === "edit" ? handleTaskDelete : undefined}
+        onDelete={taskEditor.mode === "edit" ? handleTaskDelete : undefined}
       />
-    </main>
+
+      <ColumnDialog
+        boardId={board.id}
+        column={editingColumn}
+        columnCount={board.columns.length}
+        onClose={() => setEditingColumn(null)}
+      />
+    </BoardShell>
+  );
+}
+
+function BoardTitle({ board }: { board: Board }) {
+  const renameBoard = useWorkspaceStore((state) => state.renameBoard);
+  const [editing, setEditing] = React.useState(false);
+  const [draft, setDraft] = React.useState(board.name);
+
+  const commit = () => {
+    setEditing(false);
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== board.name) {
+      renameBoard(board.id, trimmed);
+    } else {
+      setDraft(board.name);
+    }
+  };
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") commit();
+          if (event.key === "Escape") {
+            setDraft(board.name);
+            setEditing(false);
+          }
+        }}
+        className="w-full max-w-xl border-b-2 border-brand bg-transparent text-3xl font-bold tracking-tight text-foreground outline-none"
+        aria-label="Board name"
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        setDraft(board.name);
+        setEditing(true);
+      }}
+      className={cn(
+        "group flex min-w-0 items-center gap-2 rounded-sm text-left",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      )}
+      title="Rename board"
+    >
+      <h1 className="truncate border-b-2 border-transparent text-3xl font-bold tracking-tight text-foreground group-hover:border-brand">
+        {board.name}
+      </h1>
+      <Pencil
+        className="h-4 w-4 shrink-0 text-muted-foreground/0 transition-colors group-hover:text-muted-foreground"
+        aria-hidden="true"
+      />
+    </button>
   );
 }

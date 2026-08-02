@@ -1,93 +1,164 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-seagull-50: #edfbfe;
-    --color-seagull-100: #d2f3fb;
-    --color-seagull-200: #abe6f6;
-    --color-seagull-300: #64cfee;
-    --color-seagull-400: #2fb6e1;
-    --color-seagull-500: #1499c6;
-    --color-seagull-600: #137aa7;
-    --color-seagull-700: #176387;
-    --color-seagull-800: #1b526f;
-    --color-seagull-900: #1b455e;
-    --color-seagull-950: #0c2b40;
-  }
+@custom-variant dark (&:is(.dark *));
+
+/*
+  Darkroom identity — a print emerging under safelight. Exactly one hue
+  lives in this application; everything else is warm-neutral grey. Priority
+  is not colour-coded, it is *density*: the amount of that one hue, which is
+  the thing a darkroom actually measures. Dark is the room; light is the
+  finished print seen in daylight.
+*/
+:root {
+  /* Daylight — the print, dried, on warm neutral stock. */
+  --background: #e6e2dd;
+  --foreground: #1c1917;
+  --card: #f3f0ec;
+  --card-foreground: #1c1917;
+  --popover: #f7f5f2;
+  --popover-foreground: #1c1917;
+  --primary: #1c1917;
+  --primary-foreground: #f3f0ec;
+  --secondary: #dcd7d1;
+  --secondary-foreground: #1c1917;
+  --muted: #dfdad4;
+  --muted-foreground: #6b625d;
+  --accent: #dcd7d1;
+  --accent-foreground: #1c1917;
+  --destructive: #a8331f;
+  --destructive-foreground: #f7f5f2;
+  --border: #cdc7c0;
+  --input: #bdb6ae;
+  --ring: #b34c2b;
+
+  /*
+    Deeper than the safelight orange used in dark mode: on light stock the
+    accent carries white text on brand buttons, and #c2542f only reached
+    4.19:1 against --brand-foreground. #b34c2b clears AA at 4.79:1.
+  */
+  --brand: #b34c2b;
+  --brand-foreground: #f7f5f2;
+
+  /* Scrim behind modals — the room going dark. */
+  --overlay: #1c1917;
+
+  /*
+    Density steps of --brand mixed toward --background: 100% / 60% / 38%.
+    Written as literal hex rather than color-mix(): custom-property
+    substitution resolves on the element that declares it, so a single
+    :root definition referencing var(--background) would not re-resolve
+    under .dark. Each mode carries its own values.
+  */
+  --priority-high: #b34c2b;
+  --priority-medium: #cd7d5e;
+  --priority-low: #dcb0a0;
+
+  --radius: 0.25rem;
+
+  /* The sidebar shares the paper surface — one quiet room, not two-tone chrome. */
+  --sidebar: #e6e2dd;
+  --sidebar-foreground: #1c1917;
+  --sidebar-primary: #b34c2b;
+  --sidebar-primary-foreground: #f7f5f2;
+  --sidebar-accent: #dcd7d1;
+  --sidebar-accent-foreground: #1c1917;
+  --sidebar-border: #cdc7c0;
+  --sidebar-ring: #b34c2b;
 }
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 20 14.3% 4.1%;
-    --card: 0 0% 100%;
-    --card-foreground: 20 14.3% 4.1%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 20 14.3% 4.1%;
-    --primary: 24 9.8% 10%;
-    --primary-foreground: 60 9.1% 97.8%;
-    --secondary: 60 4.8% 95.9%;
-    --secondary-foreground: 24 9.8% 10%;
-    --muted: 60 4.8% 95.9%;
-    --muted-foreground: 25 5.3% 44.7%;
-    --accent: 60 4.8% 95.9%;
-    --accent-foreground: 24 9.8% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 60 9.1% 97.8%;
-    --border: 20 5.9% 90%;
-    --input: 20 5.9% 90%;
-    --ring: 20 14.3% 4.1%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --sidebar-background: var(--background);
-    --sidebar-foreground: var(--foreground);
-    --sidebar-primary: var(--primary);
-    --sidebar-primary-foreground: var(--primary-foreground);
-    --sidebar-accent: var(--accent);
-    --sidebar-accent-foreground: var(--accent-foreground);
-    --sidebar-border: var(--border);
-    --sidebar-ring: var(--ring);
-  }
-  .dark {
-    --background: 20 14.3% 4.1%;
-    --foreground: 60 9.1% 97.8%;
-    --card: 20 14.3% 4.1%;
-    --card-foreground: 60 9.1% 97.8%;
-    --popover: 20 14.3% 4.1%;
-    --popover-foreground: 60 9.1% 97.8%;
-    --primary: 60 9.1% 97.8%;
-    --primary-foreground: 24 9.8% 10%;
-    --secondary: 12 6.5% 15.1%;
-    --secondary-foreground: 60 9.1% 97.8%;
-    --muted: 12 6.5% 15.1%;
-    --muted-foreground: 24 5.4% 63.9%;
-    --accent: 12 6.5% 15.1%;
-    --accent-foreground: 60 9.1% 97.8%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 60 9.1% 97.8%;
-    --border: 12 6.5% 15.1%;
-    --input: 12 6.5% 15.1%;
-    --ring: 24 5.7% 82.9%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: var(--background);
-    --sidebar-foreground: var(--foreground);
-    --sidebar-primary: var(--primary);
-    --sidebar-primary-foreground: var(--primary-foreground);
-    --sidebar-accent: var(--accent);
-    --sidebar-accent-foreground: var(--accent-foreground);
-    --sidebar-border: var(--border);
-    --sidebar-ring: var(--ring);
-  }
+.dark {
+  /* Safelight — the room is lit by one lamp and the print is the warm thing in it. */
+  --background: #0d0b0c;
+  --foreground: #e8e2e0;
+  --card: #151112;
+  --card-foreground: #e8e2e0;
+  --popover: #191415;
+  --popover-foreground: #e8e2e0;
+  --primary: #e8e2e0;
+  --primary-foreground: #0d0b0c;
+  --secondary: #201a1b;
+  --secondary-foreground: #e8e2e0;
+  --muted: #1b1617;
+  --muted-foreground: #8a7e80;
+  --accent: #201a1b;
+  --accent-foreground: #e8e2e0;
+  /*
+    Destructive stays inside the warm-red family on purpose — deeper and
+    more saturated than the safelight. It separates from --brand by depth,
+    not by hue, which keeps the one-hue thesis intact.
+  */
+  --destructive: #b83a2e;
+  --destructive-foreground: #f3efee;
+  --border: #241c1e;
+  --input: #322829;
+  --ring: #d9633f;
+
+  --brand: #d9633f;
+  --brand-foreground: #17100e;
+
+  --overlay: #050404;
+
+  --priority-high: #d9633f;
+  --priority-medium: #8f4530;
+  --priority-low: #5c2f24;
+
+  --sidebar: #0d0b0c;
+  --sidebar-foreground: #e8e2e0;
+  --sidebar-primary: #d9633f;
+  --sidebar-primary-foreground: #17100e;
+  --sidebar-accent: #201a1b;
+  --sidebar-accent-foreground: #e8e2e0;
+  --sidebar-border: #241c1e;
+  --sidebar-ring: #d9633f;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+
+  --color-overlay: var(--overlay);
+
+  --color-priority-high: var(--priority-high);
+  --color-priority-medium: var(--priority-medium);
+  --color-priority-low: var(--priority-low);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+
+  --font-sans: var(--font-archivo), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 }
 
 @layer base {
@@ -95,15 +166,69 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+  }
+  ::selection {
+    background: var(--brand);
+    color: var(--brand-foreground);
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
+/*
+  Sonner ships its own palette and injects it unlayered, so this override has
+  to stay outside @layer base or it loses the cascade outright. The :root
+  prefix takes specificity to (0,3,0), which beats sonner's own
+  [data-sonner-toaster][data-sonner-theme="…"] at (0,2,0) regardless of which
+  stylesheet the browser happens to insert last.
+
+  Without this, toasts render on sonner's neutral surface — #fff in light,
+  pure #000 in dark — neither of which belongs to the warm-neutral palette.
+*/
+:root [data-sonner-toaster][data-sonner-theme] {
+  --normal-bg: var(--popover);
+  --normal-bg-hover: var(--accent);
+  --normal-text: var(--popover-foreground);
+  --normal-border: var(--border);
+  --normal-border-hover: var(--input);
+  --border-radius: var(--radius);
+}
+
+@utility eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/*
+  Cards develop — a print coming up in the tray. Used on board load
+  (staggered down each column) and once more when a card is dropped into a
+  new column. Nothing else in the app animates.
+*/
+@keyframes develop {
+  from {
+    opacity: 0;
+    filter: blur(4px);
   }
-  body {
-    @apply bg-background text-foreground;
+  to {
+    opacity: 1;
+    /* Deliberately no `filter` here. Lightning CSS minifies `blur(0)` to the
+       invalid `blur()`; omitting the property lets the blur interpolate back
+       to the element's own `none`, which is equivalent and can't be mangled. */
+  }
+}
+
+@utility develop {
+  animation: develop var(--develop-duration, 320ms) ease-out both;
+}
+
+/*
+  Unlayered, so it beats the utilities layer regardless of source order.
+  Reduced motion is a requirement here, not a nicety — the effect is a
+  full-card blur.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .develop {
+    animation: none;
   }
 }

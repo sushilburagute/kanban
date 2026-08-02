@@ -1,49 +1,59 @@
+import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
+
 import { formatTimeDistance } from "@/lib/utils";
-import { BoardSnapshot } from "@/types/BoardSnapshot";
-import { CircleCheck, TimerReset } from "lucide-react";
+import type { BoardSnapshot } from "@/types/kanban";
 
 export function BoardCard({ snapshot }: { snapshot: BoardSnapshot }) {
-  const { name, total, done, inProgress, todo, lastUpdatedAt, upcomingDueDate } = snapshot;
+  const { id, name, total, done, perColumn, lastUpdatedAt, upcomingDueDate } = snapshot;
   const completion = total ? Math.round((done / total) * 100) : 0;
-  const statusLine = [`${done} done`, `${inProgress} in progress`, `${todo} queued`].join(" · ");
 
   const lastUpdatedLabel = lastUpdatedAt ? formatTimeDistance(new Date(lastUpdatedAt)) : "—";
-
   const upcomingDueLabel = upcomingDueDate
-    ? formatTimeDistance(new Date(upcomingDueDate))
+    ? `Next due ${formatTimeDistance(new Date(upcomingDueDate))}`
     : "No upcoming due dates";
 
   return (
-    <div className="flex flex-col gap-5 rounded-2xl border border-border/60 bg-card/80 p-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">{name}</h3>
-        <span className="text-xs uppercase tracking-wide text-muted-foreground">{total} cards</span>
+    <Link
+      href={`/boards/${id}`}
+      className="group flex flex-col gap-4 rounded-lg border bg-card p-5 transition-colors hover:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="truncate text-base font-semibold text-foreground">{name}</h3>
+        <span className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
+          {total} {total === 1 ? "card" : "cards"}
+          <ArrowUpRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+        </span>
       </div>
 
       <div>
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Completion</span>
-          <span>{completion}%</span>
+        <div className="flex items-center justify-between font-mono text-xs text-muted-foreground">
+          <span>done</span>
+          <span>
+            {done}/{total} · {completion}%
+          </span>
         </div>
-        <div className="mt-2 h-2 rounded-full bg-muted">
+        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
           <div
-            className="h-full rounded-full bg-primary transition-[width] duration-300"
+            className="h-full rounded-full bg-brand transition-[width] duration-300"
             style={{ width: `${completion}%` }}
           />
         </div>
       </div>
 
-      <div className="space-y-2 text-sm text-muted-foreground">
-        <p>{statusLine}</p>
-        <p className="flex items-center gap-2">
-          <TimerReset className="h-4 w-4" />
-          <span>Last activity {lastUpdatedLabel}</span>
-        </p>
-        <p className="flex items-center gap-2">
-          <CircleCheck className="h-4 w-4" />
-          <span>{upcomingDueLabel}</span>
-        </p>
+      <p className="font-mono text-xs leading-relaxed text-muted-foreground">
+        {perColumn.map(({ column, count }, index) => (
+          <span key={column.id}>
+            {index > 0 ? " · " : ""}
+            {count} {column.title.toLowerCase()}
+          </span>
+        ))}
+      </p>
+
+      <div className="space-y-1 text-xs text-muted-foreground">
+        <p>Last activity {lastUpdatedLabel}</p>
+        <p>{upcomingDueLabel}</p>
       </div>
-    </div>
+    </Link>
   );
 }

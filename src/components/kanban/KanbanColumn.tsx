@@ -1,75 +1,171 @@
-import { cn } from "@/lib/utils";
+"use client";
+
+import * as React from "react";
 import { useDroppable } from "@dnd-kit/core";
-import { Separator } from "../ui/separator";
-import { Button } from "../ui/button";
-import { PlusCircle } from "lucide-react";
-import { KanbanColumnType } from "@/types/KanbanColumn";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { Check, GripVertical, Pencil, Plus } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+import type { BoardColumn, KanbanTask } from "@/types/kanban";
+
+import { KanbanTaskCard } from "./KanbanTaskCard";
 
 type KanbanColumnProps = {
-  column: KanbanColumnType;
-  count: number;
-  children: React.ReactNode;
-  onAddTask?: () => void;
+  column: BoardColumn;
+  tasks: KanbanTask[];
+  totalCount: number;
+  filtering: boolean;
+  dragDisabled: boolean;
+  /** Task that most recently landed here from a drag, re-developed once. */
+  lastMovedTaskId?: string | null;
+  onAddTask: (columnId: string) => void;
+  onTaskOpen: (task: KanbanTask) => void;
+  onEditColumn: (column: BoardColumn) => void;
 };
 
-export function KanbanColumn({ column, count, onAddTask, children }: KanbanColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: column.id,
-    data: {
-      type: "column",
-      columnId: column.id,
-    },
+export function KanbanColumn({
+  column,
+  tasks,
+  totalCount,
+  filtering,
+  dragDisabled,
+  lastMovedTaskId,
+  onAddTask,
+  onTaskOpen,
+  onEditColumn,
+}: KanbanColumnProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setSortableRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: `column:${column.id}`,
+    data: { type: "column", columnId: column.id },
+    disabled: dragDisabled,
   });
+
+  const { setNodeRef: setDroppableRef, isOver } = useDroppable({
+    id: `drop:${column.id}`,
+    data: { type: "column-drop", columnId: column.id },
+  });
+
+  const style = React.useMemo<React.CSSProperties>(
+    () => ({
+      transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+      transition,
+    }),
+    [transform, transition]
+  );
 
   return (
     <section
+      ref={setSortableRef}
+      style={style}
       className={cn(
-        "flex h-full min-h-[320px] flex-col rounded-2xl border border-border/60 bg-card/40 backdrop-blur",
-        isOver && "border-primary/60 bg-accent/40 shadow-md"
+        "flex w-[300px] shrink-0 flex-col",
+        isDragging && "opacity-50"
       )}
+      aria-label={`${column.title} column`}
     >
-      <header className="flex items-start justify-between gap-2 p-4">
-        <div className="min-w-0 space-y-1">
-          <p className="truncate text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            {column.title}
-          </p>
-          {column.description ? (
-            <p className="text-xs text-muted-foreground/80">{column.description}</p>
-          ) : null}
+      <header
+        className={cn(
+          "group/column flex items-center gap-1.5 border-b pb-2 transition-colors",
+          isOver && "border-b-brand"
+        )}
+      >
+        <button
+          type="button"
+          ref={setActivatorNodeRef}
+          {...listeners}
+          {...attributes}
+          disabled={dragDisabled}
+          className="-ml-1 cursor-grab rounded p-0.5 text-muted-foreground/40 opacity-0 transition-opacity focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/column:opacity-100 disabled:hidden"
+          aria-label={`Reorder ${column.title} column`}
+        >
+          <GripVertical className="h-4 w-4" aria-hidden="true" />
+        </button>
+
+        <h2 className="eyebrow min-w-0 truncate text-foreground">{column.title}</h2>
+
+        {column.countsAsDone ? (
+          <Check
+            className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+            aria-label="Cards here count as done"
+          />
+        ) : null}
+
+        <div className="ml-auto flex items-center gap-1.5">
+          <span className="font-mono text-[11px] leading-none text-muted-foreground">
+            {filtering ? `${tasks.length}/${totalCount}` : totalCount}
+          </span>
+          <button
+            type="button"
+            onClick={() => onEditColumn(column)}
+            className="rounded p-1 text-muted-foreground/50 opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/column:opacity-100"
+            aria-label={`Edit ${column.title} column`}
+          >
+            <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
         </div>
-        <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
-          {count}
-        </span>
       </header>
 
-      <Separator className="opacity-80" />
-
-      <div
-        ref={setNodeRef}
-        className={cn("flex flex-1 flex-col gap-3 p-4 transition-colors", isOver && "bg-accent/20")}
+      <SortableContext
+        id={column.id}
+        items={tasks.map((task) => task.id)}
+        strategy={verticalListSortingStrategy}
       >
-        {count ? (
-          children
-        ) : (
-          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-muted-foreground/30 p-4 text-center text-sm text-muted-foreground">
-            Drag tasks here
-          </div>
-        )}
-      </div>
-
-      {onAddTask ? (
-        <div className="p-4 pt-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-center gap-2"
-            onClick={onAddTask}
-          >
-            <PlusCircle className="h-4 w-4" />
-            Add task
-          </Button>
+        <div
+          ref={setDroppableRef}
+          className={cn(
+            "flex min-h-[120px] flex-1 flex-col gap-2 rounded-lg py-2.5 transition-colors",
+            isOver && "bg-secondary/60"
+          )}
+        >
+          {tasks.length ? (
+            tasks.map((task, index) => (
+              <div key={task.id} className="flex items-start gap-2">
+                {/* Contact-sheet frame number. Decorative — the card below
+                    already carries everything a screen reader needs. */}
+                <span
+                  aria-hidden
+                  className="w-5 shrink-0 pt-3.5 text-right font-mono text-[10px] leading-none text-muted-foreground/30"
+                >
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <KanbanTaskCard
+                    task={task}
+                    isDone={column.countsAsDone}
+                    dragDisabled={dragDisabled}
+                    developIndex={index}
+                    justMoved={task.id === lastMovedTaskId}
+                    onSelect={onTaskOpen}
+                  />
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="ml-7 flex flex-1 items-center justify-center rounded-md border border-dashed p-4 text-center font-mono text-xs text-muted-foreground/70">
+              {filtering && totalCount > 0 ? "No matching cards" : "No cards yet"}
+            </div>
+          )}
         </div>
-      ) : null}
+      </SortableContext>
+
+      <div className="pl-7">
+        <button
+          type="button"
+          onClick={() => onAddTask(column.id)}
+          className="flex w-full items-center gap-1.5 rounded-md px-1 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+          Add card
+        </button>
+      </div>
     </section>
   );
 }
